@@ -63,7 +63,7 @@ class Order extends Model
 
     public function items()
     {
-        return $this->hasMany(OrderItem::class, 'order_id', 'id')->with('product');
+        return $this->hasMany(OrderItem::class, 'order_id', 'id', 'supplier_id', 'retailer_id')->with('product');
     }
 
     // order and items middle table relation between supplier/retailer/distributor

@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\RolesAndPermissionController;
+use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\OrderController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,9 +16,10 @@ use App\Http\Controllers\Api\RolesAndPermissionController;
 */
 
 Route::get('/', function () {
-   // return "<a href='".config('app.frontend_url')."'>DWC Ltd Portal</a>";
+    return "<a href='".config('app.frontend_url')."'>DWC Ltd Portal</a>";
     //return view('welcome');
-$mysqli = new mysqli("localhost","root","","prod_db");
+    /*
+$mysqli = new mysqli("localhost","root","root","prod_db");
 
 // Check connection
 if ($mysqli -> connect_errno) {
@@ -25,14 +28,13 @@ if ($mysqli -> connect_errno) {
 } else {
 
 echo "Successfully connect";
-}
+} */
 
 });
 
-//  Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
+  Route::get('report',[RolesAndPermissionController::class,'getsalesReport']);
+
 // Auth::routes();
-//Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get(
-    '/home',
-    [RolesAndPermissionController::class,'topRetailerList']
-);
+Route::get('/home', [RolesAndPermissionController::class,'PostReportProductList']);
+Route::get('/form', [RolesAndPermissionController::class,'GetWarehousesList']);
+//Route::get('/getCity', [RolesAndPermissionController::class,'GetRetailersCity']);

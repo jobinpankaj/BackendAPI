@@ -40,7 +40,7 @@ class RetailerController extends Controller
         $data = $usersQuery->get();
         $success  = $data;
         $message  = Lang::get("messages.supplier_user_list");
-        return sendResponse($success, $message); 
+        return sendResponse($success, $message);
     }
 
     public function getLocalSuppliers(Request $request)
@@ -51,7 +51,7 @@ class RetailerController extends Controller
         $data = $this->localSupplierUsers($request);
         $success  = $data;
         $message  = Lang::get("messages.supplier_user_list");
-        return sendResponse($success, $message); 
+        return sendResponse($success, $message);
     }
 
     public function sendRequestToSupplier(Request $request)
@@ -78,12 +78,12 @@ class RetailerController extends Controller
             ]);
             $success = [];
             $message  = Lang::get("messages.request_sent_successfully");
-            return sendResponse($success, $message); 
+            return sendResponse($success, $message);
         }
         else{
             $success = [];
             $message  = Lang::get("messages.already_request_sent_successfully");
-            return sendResponse($success, $message); 
+            return sendResponse($success, $message);
         }
     }
 
@@ -94,7 +94,7 @@ class RetailerController extends Controller
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
         $user_id = auth()->user()->id;
-        
+
         $data = RetailerSupplierRequest::with(['supplierInformation'])->orWhereHas('supplierInformation',function($query){
                 $query->whereHas("userMainAddress",function($query1){
                     $query1->whereNotNull("latitude");
@@ -107,7 +107,7 @@ class RetailerController extends Controller
         return sendResponse($success, $message);
     }
 
-    
+
     public function suppliersAllList(Request $request)
     {
         if($this->permission !== "supplier-view")
@@ -115,7 +115,7 @@ class RetailerController extends Controller
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
         $user = auth()->user();
-        
+
         $data = User::with('userMainAddress')->where('user_type_id',3)->whereHas('userMainAddress', function ($query) {
             $query->whereNotNull('latitude')->whereNotNull('longitude');
         })
@@ -171,7 +171,7 @@ class RetailerController extends Controller
         $message  = Lang::get("messages.order_list");
         return sendResponse($success, $message);
     }
-    
+
     public function retailerList(Request $request)
     {
         // dd(888);
@@ -179,7 +179,7 @@ class RetailerController extends Controller
         {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
-        
+
         $search = $request->input("search");
         $user_id = auth()->user()->id;
         $user_type_id = 4;
@@ -193,7 +193,7 @@ class RetailerController extends Controller
                     $query1->where("first_name",'LIKE',"%".$search."%")->orWhere("last_name",'LIKE',"%".$search."%")->orWhere("email",'LIKE',"%".$search."%")->orWhere("phone_number",'LIKE',"%".$search."%")->orWhereRaw("concat(first_name,' ',last_name) like '%".$search."%'");
                 });
                 $query = $query->orWhereHas('userRoutes',function($query1) use($search){
-                    $query1->where("name",'LIKE',"%".$search."%");              
+                    $query1->where("name",'LIKE',"%".$search."%");
                 });
             });
         }

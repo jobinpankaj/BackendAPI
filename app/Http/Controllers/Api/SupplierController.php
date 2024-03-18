@@ -1,18 +1,26 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\RetailerSupplierRequest;
 use App\Models\SupplierDistributor;
+use App\Models\Product;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
+use DB;
 
 class SupplierController extends Controller
 {
+  public function __construct()
+  {
+      $headers = getallheaders();
+
+      $this->permisssion = isset($headers['permission']) ? $headers['permission'] : "";
+      dd($this->permisssion);
+  }
     public function getRetailerRequests()
     {
         // if($this->permission !== "retailer-view")
@@ -59,12 +67,12 @@ class SupplierController extends Controller
         $distributors = $distributors->map(function ($item) {
             // Accessing company_name from the user_profile object
             $company_name = $item->userProfile->company_name ?? null;
-        
+
             $item->comapany_name = $company_name;
-        
+
             return $item;
         });
-        
+
         // Now each item in $data has an additional property 'company_name'
         foreach ($distributors as $item) {
             $company_name = $item->company_name; // Accessing the added 'company_name' property
@@ -113,12 +121,12 @@ class SupplierController extends Controller
         $data = $data->map(function ($item) {
             // Accessing company_name from the user_profile object
             $company_name = $item->userProfile->company_name ?? null;
-        
+
             $item->comapany_name = $company_name;
-        
+
             return $item;
         });
-        
+
         // Now each item in $data has an additional property 'company_name'
         foreach ($data as $item) {
             $id = $item->id;

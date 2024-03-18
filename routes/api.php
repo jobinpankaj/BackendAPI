@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Controllers\Api\AvailabilityController;
 use App\Http\Controllers\Api\ContactUsController;
 use Illuminate\Http\Request;
@@ -44,58 +43,59 @@ use App\Http\Controllers\Api\InvoiceDetailController;
 // Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
+
 Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
 
-    Route::post('login', [LoginController::class, 'login']);
-    Route::get('addOrder', [CartController::class, 'addOrder']);
-    Route::get('addOrderFromSupplier', [CartController::class, 'addOrderFromSupplier']);
-    Route::post('loginWithOtherUser', [LoginController::class, 'loginWithOtherUser']);
-    Route::post('checkHash', [LoginController::class, 'checkHash']);
+            Route::post('login', [LoginController::class, 'login']);
+            Route::get('addOrder', [CartController::class, 'addOrder']);
+            Route::get('addOrderFromSupplier', [CartController::class, 'addOrderFromSupplier']);
+            Route::post('loginWithOtherUser', [LoginController::class, 'loginWithOtherUser']);
+            Route::post('checkHash', [LoginController::class, 'checkHash']);
 
-    Route::post('registerRetailer', [LoginController::class, 'registerRetailer']);
-    Route::get('emailVerified', [LoginController::class, 'emailVerification']);
-    Route::post('forgotPassword', [LoginController::class, 'forgotPassword']);
-    Route::post('resetPassword', [LoginController::class, 'resetPassword']);
+            Route::post('registerRetailer', [LoginController::class, 'registerRetailer']);
+            Route::get('emailVerified', [LoginController::class, 'emailVerification']);
+            Route::post('forgotPassword', [LoginController::class, 'forgotPassword']);
+            Route::post('resetPassword', [LoginController::class, 'resetPassword']);
 
-    Route::get('getBusinessCategories', [LoginController::class, 'getBusinessCategories']);
-    Route::get('getSiteLanguages', [LoginController::class, 'getSiteLanguages']);
+            Route::get('getBusinessCategories', [LoginController::class, 'getBusinessCategories']);
+            Route::get('getSiteLanguages', [LoginController::class, 'getSiteLanguages']);
 
-    Route::get('getSubCategories', [ProductController::class, 'getSubCategories']);
+            Route::get('getSubCategories', [ProductController::class, 'getSubCategories']);
 
-    Route::get('getProductStyles', [ProductController::class, 'getProductStyles']);
+            Route::get('getProductStyles', [ProductController::class, 'getProductStyles']);
 
-    Route::get('getProductFormats', [ProductFormatController::class, 'getProductFormats']);
+            Route::get('getProductFormats', [ProductFormatController::class, 'getProductFormats']);
 
-    Route::get('getTaxes', [TaxController::class, 'getTaxes']);
+            Route::get('getTaxes', [TaxController::class, 'getTaxes']);
 
-    Route::get('getVisibilities', [VisibilityController::class, 'getVisibilities']);
+            Route::get('getVisibilities', [VisibilityController::class, 'getVisibilities']);
 
-    Route::post('contactUs', [ContactUsController::class, 'contactUs']);
-    Route::post('newsletter-subscription', [NewsletterSubscriptionController::class, 'store']);
+            Route::post('contactUs', [ContactUsController::class, 'contactUs']);
+            Route::post('newsletter-subscription', [NewsletterSubscriptionController::class, 'store']);
 
-    Route::get('generatePickupAndDeliveryTicket', [PDFController::class, 'generatePickupAndDeliveryTicket']);
+            Route::get('generatePickupAndDeliveryTicket', [PDFController::class, 'generatePickupAndDeliveryTicket']);
 
-    Route::get("downloadProductBarcode/{id}",[PDFController::class,'downloadProductBarcode']);
+            Route::get("downloadProductBarcode/{id}",[PDFController::class,'downloadProductBarcode']);
 
-    //Delete User
+            //Delete User
 
-    Route::get('deleteUser',[UsersController::class,'deleteUser']);
+            Route::get('deleteUser',[UsersController::class,'deleteUser']);
 
-    Route::middleware(['auth:api'])->group(function()
-    {
-    Route::post('uploadData',[ProductFormatController::class,'uploaddata']);
+Route::middleware(['auth:api'])->group(function(){
 
-        Route::get('getQrCodeImage', [LoginController::class, 'getQrCodeImage']);
-        Route::get('validateOtp',[LoginController::class, 'validateOtp']);
+            Route::post('uploadData',[ProductFormatController::class,'uploaddata']);
 
-        Route::post('logout', [LoginController::class, 'logout']);
+            Route::get('getQrCodeImage', [LoginController::class, 'getQrCodeImage']);
+            Route::get('validateOtp',[LoginController::class, 'validateOtp']);
 
-        Route::post('changePassword', [LoginController::class, 'changePassword']);
+            Route::post('logout', [LoginController::class, 'logout']);
 
-        Route::post('getSimilarProducts', [ProductController::class, 'getSimilarProducts']);
+            Route::post('changePassword', [LoginController::class, 'changePassword']);
+
+            Route::post('getSimilarProducts', [ProductController::class, 'getSimilarProducts']);
 
         // Retailer Section
-        Route::prefix('retailer')->group(function() {
+Route::prefix('retailer')->group(function() {
             Route::get("getRetailerData",[ProfileController::class,'getRetailerData']);
             Route::post('editRetailerInfo', [ProfileController::class, 'editRetailerInfo']);
             Route::post('createRetailerProfile', [ProfileController::class, 'createRetailerProfile']);
@@ -115,7 +115,7 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
         });
 
         // Distributor Section
-        Route::prefix('distributor')->group(function() {
+Route::prefix('distributor')->group(function() {
             Route::get("getDistributorInfo",[ProfileController::class,'getDistributorInfo']);
             Route::post('editDistributorInfo', [ProfileController::class, 'editDistributorInfo']);
 
@@ -123,7 +123,21 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
             Route::post('saveDistributorAddress', [ProfileController::class, 'saveDistributorAddress']);
         });
 
-        Route::prefix('supplier')->group(function() {
+Route::prefix('supplier')->group(function() {
+            Route::get('reportSupplierCity',[RolesAndPermissionController::class,'GetRetailersCity']);
+            Route::get('reportFormdataProductsName',[RolesAndPermissionController::class,'GetSuppliersProductsName']);
+            Route::get('reportFormdataProducttype',[RolesAndPermissionController::class,'GetSuppliersProductsType']);
+            Route::get('reportFormdataProductstyle',[RolesAndPermissionController::class,'GetSuppliersProductStyle']);
+            Route::get('reportFormdataProductformat',[RolesAndPermissionController::class,'GetSuppliersProductFormat']);
+            Route::get('reportFormdataProductgroup',[RolesAndPermissionController::class,'GetSuppliergroup']);
+            Route::get('reportFormdataRetailersList',[RolesAndPermissionController::class,'GetRetailersList']);
+            Route::get('reportFormdataSupplierList',[RolesAndPermissionController::class,'GetSuppliersList']);
+            Route::get('reportFormdataWarehousesList',[RolesAndPermissionController::class,'GetWarehousesList']);
+
+            Route::get('reportFormdataRetailer', [RolesAndPermissionController::class,'GetRetailers']);
+            Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
+            Route::get('topProductList',[RolesAndPermissionController::class,'topProductList']);
+            Route::get('getsalesReport',[RolesAndPermissionController::class,'getsalesReport']);
             Route::get("getSupplierData",[ProfileController::class,'getSupplierData']);
             Route::post('editSupplierInfo', [ProfileController::class, 'editSupplierInfo']);
             Route::post('saveSupplierProfile', [ProfileController::class, 'saveSupplierProfile']);
@@ -137,17 +151,17 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
             Route::get('getLinkedDistributors', [SupplierController::class, 'getLinkedDistributors']);
             Route::get('getLinkedDistributorsCompany', [SupplierController::class, 'getLinkedDistributorsCompany']);
             Route::get('getLinkedRetailers', [SupplierController::class, 'getLinkedRetailers']);
-
+            //reports
+            Route::post('PostReportProductList',[RolesAndPermissionController::class,'PostReportProductList']);
             //invoices
 
             Route::get('getInvoiceList',[PDFController::class,'getinvoiceList']);
         });
 
-        Route::get('getAllDistributors', [SupplierController::class, 'getAllDistributors']);
+            Route::get('getAllDistributors', [SupplierController::class, 'getAllDistributors']);
 
-        Route::middleware(['checkMyPermission'])->group(function() {
+Route::middleware(['checkMyPermission'])->group(function() {
             Route::get('permissionList', [RolesController::class, 'permissionList']);
-
             Route::get('roleList', [RolesController::class, 'roleList']);
             Route::post('addRole', [RolesController::class, 'addRole']);
             Route::get("getRoleData/{id}",[RolesController::class, 'getRoleData']);
@@ -157,9 +171,6 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
 
             Route::get("getUserData/{id}",[UsersController::class, 'getUserData']);
             Route::post('updateUserStatus', [UsersController::class, 'updateUserStatus']);
-
-
-
 
             // common api for user information
 
@@ -202,11 +213,8 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
 
 
             // Retailer Section
-            Route::prefix('retailer')->group(function() {
-
-
+Route::prefix('retailer')->group(function() {
                 //roles and permission
-
                 Route::get('getPermission',[RolesAndPermissionController::class,'getPermission']);
                 Route::post('addRetailerRole', [RolesAndPermissionController::class, 'addRole']);
                 Route::get('RetailerRoleList', [RolesAndPermissionController::class, 'SupplierRoleList']);
@@ -242,10 +250,10 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
             });
 
             // Supplier - Products/Warehouse/Inventory/Stock/Pricing/Availability/Inventory Transfer/Order
-            Route::prefix('supplier')->group(function() {
+Route::prefix('supplier')->group(function() {
                 //supplier Dashboard
-                Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
-           //Route::get('Dashboard',[RolesAndPermissionController::class,'topRetailerList']);
+
+                //Route::get('Dashboard',[RolesAndPermissionController::class,'topRetailerList']);
                 //roles and permission
 
                 Route::get('getPermission',[RolesAndPermissionController::class,'getPermission']);
@@ -258,23 +266,18 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
                 Route::post('deleteUserRole', [RolesAndPermissionController::class, 'deleteRole']);
                 Route::get('getUserList',[RolesAndPermissionController::class,'getUserList']);
 
-
-
                 Route::get('products', [ProductController::class, 'productsList']);
                 Route::get('product/{id}', [ProductController::class, 'getProduct']);
                 Route::post('product/add', [ProductController::class, 'addProduct']);
                 Route::post('product/{id}/update', [ProductController::class, 'updateProduct']);
                 // Route::get('product/{id}/deactivate', [ProductController::class, 'deactivateProduct']);
                 Route::post('product/statusUpdate', [ProductController::class, 'deactivateProduct']);
-
                 Route::get('productsHavingPricing', [ProductController::class, 'productsHavingPricingList']);
-
 
                 Route::get('warehouses', [WarehouseController::class, 'warehousesList']);
                 Route::get('warehouse/{id}', [WarehouseController::class, 'getWarehouse']);
                 Route::post('warehouse/add', [WarehouseController::class, 'addWarehouse']);
                 Route::post('warehouse/{id}/update', [WarehouseController::class, 'updateWarehouse']);
-
 
                 Route::get('inventories', [InventoryController::class, 'inventoryList']);
                 Route::get('inventory/{id}', [InventoryController::class, 'getInventory']);
@@ -328,15 +331,12 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
                 Route::get("creatOrderInvoice/{id}",[PDFController::class,'creatOrderInvoice']);
 
 
-
             });
 
             // distributor Api's product
-
-            Route::prefix('distributor')->group(function() {
+Route::prefix('distributor')->group(function() {
 
                 //roles and permission
-
                 Route::get('getPermission',[RolesAndPermissionController::class,'getPermission']);
                 Route::post('addDistributorRole', [RolesAndPermissionController::class, 'addRole']);
                 Route::get('DistributorrRoleList', [RolesAndPermissionController::class, 'SupplierRoleList']);

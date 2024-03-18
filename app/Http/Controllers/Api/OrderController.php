@@ -28,7 +28,7 @@ class OrderController extends Controller
     public function __construct()
     {
         $headers = getallheaders();
-        
+
         $this->permisssion = isset($headers['permission']) ? $headers['permission'] : "";
         dd($this->permisssion);
     }
@@ -69,7 +69,7 @@ class OrderController extends Controller
             'items.*.tax' => 'required|numeric',
             'items.*.sub_total' => 'required|numeric'
         ]);
-        
+
         if($validator->fails()) {
             return sendError(Lang::get('validation_error'), $validator->errors(), 422);
         }
@@ -122,7 +122,7 @@ class OrderController extends Controller
                                     'created_at' => $createdOn,
                                     ];
             $orderItemInfo = OrderItem::create($orderItemInsertData);
-            
+
             $orderDistributorInsertData = [
                                             "order_id" => $order_id,
                                             "order_item_id" => $orderItemInfo->id,
@@ -169,7 +169,7 @@ class OrderController extends Controller
         }
 
         $validated = $request->all();
-        
+
         // Update Order
         $supplierOrder->retailer_id = $validated['retailer_id'];
         $supplierOrder->distributor_id = $validated['distributor_id'];
@@ -243,7 +243,7 @@ class OrderController extends Controller
                 'route_id' => 'required',
                 'delivery_date' => 'required',
             ]);
-            
+
             if($validator->fails()) {
                 return sendError(Lang::get('validation_error'), $validator->errors(), 422);
             }
@@ -266,7 +266,7 @@ class OrderController extends Controller
             $shipment_id = $request->input("shipment_id");
             $shipment = Shipment::find($shipment_id);
             if($shipment == null){
-                return sendError(Lang::get('messages.not_found'), Lang::get('messages.shipment_not_found'), 400);   
+                return sendError(Lang::get('messages.not_found'), Lang::get('messages.shipment_not_found'), 400);
             }
             $shipment->delivery_date = $request->input("delivery_date");
             $shipment->save();
@@ -280,7 +280,7 @@ class OrderController extends Controller
         foreach($order_id_array as $key => $order_id)
         {
             // $orderItems = OrderItem::where("order_id",$order_id)->get();
-            
+
             $shipmentOrderData = OrderShipment::where("order_id",$order_id)->get();
             if($shipmentOrderData->count() < 1)
             {
@@ -328,7 +328,7 @@ class OrderController extends Controller
         $data = Order::with(['items','supplierInformation','retailerInformation','orderShipments','orderDistributors'])->where('id', $id)->first();
         // dd(\DB::getQueryLog());
         $orderItems = $data->items;
-    
+
             // dd($orderItems);
             $totalPrices = [];
             $totalQuantity = [];
@@ -343,7 +343,7 @@ class OrderController extends Controller
                 if(!empty($product_format_deposit))
                 {
                     $prod_deposit = $product_format_deposit->product_format_deposit;
-                    
+
                 }
                 else{
                     $prod_deposit = 0.0;
@@ -370,9 +370,9 @@ class OrderController extends Controller
                 {
                     $Tax = Tax::where('id',$tax_id)->first();
                     $QST = ($Tax->tax) ;
-              
+
                     $priceqst = ($orderItem->sub_total) - ($orderItem->tax ?? null);
-                  
+
                     $totalorderQst = ($priceqst * $QST) / 100 ;
                     $totalQST []= $totalorderQst;
                     // dd($totalQST);
@@ -385,7 +385,7 @@ class OrderController extends Controller
                     $pricegstqst = ($orderItem->sub_total) - ($orderItem->tax ?? null);
                     $totalorderGstQst = ($pricegstqst * $GSTQST) / 100 ;
                     $totalGSTQST []= $totalorderGstQst;
-                    
+
                 }
                 $price = $orderItem->sub_total;
                 $quantity = $orderItem->quantity;
@@ -396,8 +396,8 @@ class OrderController extends Controller
                 $totalQuantity[] = $quantity;
                 $totalTax[] = $tax;
                 $totalProductDeposit [] = $prod_deposit;
-                
-               
+
+
 
             }
             // dd($totalGST);
@@ -406,7 +406,7 @@ class OrderController extends Controller
             $totalOrderTax = array_sum($totalTax);
             $totalOrderProductDeposit = array_sum($totalProductDeposit);
             $totalOrderGST = array_sum($totalGST);
-            
+
             $totalOrderQST = array_sum($totalQST);
             $totalOrderGSTQST = array_sum($totalGSTQST);
             $subtotal = $totalOrderPrice + $totalOrderProductDeposit;
@@ -422,7 +422,7 @@ class OrderController extends Controller
             // if(!empty($QST))
             // {
             //     $totalorderQstVal = (($pricegst * $GST) * $orderItem->quantity) / 100 ;
-                
+
             //     $totalorderQstVal = ($subtotal * $totalOrderQST) / 100 ;
             // }
             // else{
@@ -449,7 +449,7 @@ class OrderController extends Controller
             $data['totalOrderGSTQST'] = $totalOrderGSTQST;
             $data['subtotal'] = $subtotal;
             $data['finalPrice'] = $finalPrice;
-          
+
 
 
         $success = $data;
@@ -459,10 +459,10 @@ class OrderController extends Controller
 
     public function retailerOrderList()
     {
-        if($this->permisssion !== "order-view")
-        {
-            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
-        }
+       // if($this->permisssion !== "order-view")
+       // {
+       //     return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+       // }
 
         $user = auth()->user();
         $data = Order::with(['items', 'supplierInformation'])->where('retailer_id', $user->id)->orderBy('created_at','DESC')->get();
@@ -490,7 +490,7 @@ class OrderController extends Controller
         }
 
         $validated = $request->all();
-        
+
         $user = auth()->user();
         $orderIds = explode(",", $validated['order_id']);
         Order::where('supplier_id', $user->id)->whereIn('id', $orderIds)->update([
@@ -530,7 +530,7 @@ class OrderController extends Controller
         $invoiceInsertData = array();
         $orderHistoryInsertData = array();
         foreach($order_id_array as $key => $order_id)
-        {   
+        {
             $orderData = Order::where("id",$order_id)->first();
             // if($orderData !== null)
             // {
