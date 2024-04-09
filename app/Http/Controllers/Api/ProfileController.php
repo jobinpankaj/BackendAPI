@@ -201,6 +201,13 @@ class ProfileController extends Controller
         $userData = $this->getUserData($user_id,"3");
         return $userData;
     }
+    public function getAllSupplierData()
+    {
+       
+   $userData = User::where('user_type_id', '=', 3)->get();
+         return $userData;
+          
+    }
 
     public function editSupplierInfo(Request $request)
     {

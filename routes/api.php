@@ -138,6 +138,7 @@ Route::prefix('supplier')->group(function() {
             Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
             Route::get('topProductList',[RolesAndPermissionController::class,'topProductList']);
             Route::get('getsalesReport',[RolesAndPermissionController::class,'getsalesReport']);
+            Route::get("getAllSupplierData",[ProfileController::class,'getAllSupplierData']);
             Route::get("getSupplierData",[ProfileController::class,'getSupplierData']);
             Route::post('editSupplierInfo', [ProfileController::class, 'editSupplierInfo']);
             Route::post('saveSupplierProfile', [ProfileController::class, 'saveSupplierProfile']);
