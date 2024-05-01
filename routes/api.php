@@ -138,7 +138,6 @@ Route::prefix('supplier')->group(function() {
             Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
             Route::get('topProductList',[RolesAndPermissionController::class,'topProductList']);
             Route::get('getsalesReport',[RolesAndPermissionController::class,'getsalesReport']);
-            Route::get("getAllSupplierData",[ProfileController::class,'getAllSupplierData']);
             Route::get("getSupplierData",[ProfileController::class,'getSupplierData']);
             Route::post('editSupplierInfo', [ProfileController::class, 'editSupplierInfo']);
             Route::post('saveSupplierProfile', [ProfileController::class, 'saveSupplierProfile']);
@@ -226,7 +225,7 @@ Route::prefix('retailer')->group(function() {
                 Route::post('deleteUserRole', [RolesAndPermissionController::class, 'deleteRole']);
                 Route::get('getUserList',[RolesAndPermissionController::class,'getUserList']);
 
-
+                Route::get("getSupplierAllProduct/{id}"[ProductController::class'getSupplierAllProductList']);
                 Route::get("getLocalSuppliers",[RetailerController::class,'getLocalSuppliers']);
                 Route::get("getSupplierListOnDashboard",[RetailerController::class,'getSupplierListOnDashboard']);
                 Route::get("getOrderListOnDashboard",[RetailerController::class,'getOrderListOnDashboard']);
@@ -244,7 +243,8 @@ Route::prefix('retailer')->group(function() {
                 Route::get("clearCart",[CartController::class,'clearCart']);
 
                 Route::get("orderListing",[OrderController::class,'retailerOrderList']);
-
+  //retailer Orders status Count
+  Route::get('orderListingStatusCount', [OrderController::class, 'retailerOrderListCount']);
                 Route::get('orderDetail/{id}', [OrderController::class, 'orderDetail']);
                 Route::post("createOrderByRetailer",[CartController::class,'createOrderByRetailer']);
 
@@ -306,6 +306,9 @@ Route::prefix('supplier')->group(function() {
                 Route::post('availability/add', [AvailabilityController::class, 'addAvailability']);
                 Route::post('availability/{id}/update', [AvailabilityController::class, 'updateAvailability']);
 
+                  // SendRequestToRetailer
+              Route::post("sendRequestToRetailer",[RetailerController::class,'sendRequestToRetailer']);
+
                 Route::get('retailerRequests', [SupplierController::class, 'getRetailerRequests']);
                 Route::post('retailerRequests/{id}/action', [SupplierController::class, 'actionOnRetailerRequest']);
 
@@ -319,6 +322,7 @@ Route::prefix('supplier')->group(function() {
                 Route::post('inventoryTransfer/add', [InventoryTransferController::class, 'addInventoryTransfer']);
                 Route::post('inventoryTransfer/{id}/update', [InventoryTransferController::class, 'updateInventoryTransfer']);
 
+                Route::get('ordersStatusCount', [OrderController::class, 'supplierOrderListCount']);
                 Route::get('orders', [OrderController::class, 'supplierOrderList']);
                 Route::get('orderDetail/{id}', [OrderController::class, 'orderDetail']);
                 Route::post('order/add', [OrderController::class, 'addSupplierOrder']);
@@ -330,6 +334,11 @@ Route::prefix('supplier')->group(function() {
                 //invoices
                 Route::get("orderInvoice/{id}",[InvoiceDetailController::class,'createOrderInvoice']);
                 Route::get("creatOrderInvoice/{id}",[PDFController::class,'creatOrderInvoice']);
+
+                 //Product Style Post API
+                 Route::post('createProductStyles', [ProductController::class, 'createProductStyles']);
+                 //Product Formats Post API
+                 Route::post('createProductFormats', [ProductFormatController::class, 'createProductFormats']);
 
 
             });
