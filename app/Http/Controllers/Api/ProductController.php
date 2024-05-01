@@ -29,7 +29,23 @@ class ProductController extends Controller
         
         $this->permisssion = isset($headers['permission']) ? $headers['permission'] : "";
     }
-
+    public function getSupplierAllProductList($id)
+    {
+        
+   
+        if($this->permisssion !== "marketplace-view")
+        {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+		
+		  $productList = Product::has('pricing')->has('inventory')->has('availability')->with(['description', 'productFormat','userInformation','userProfile','pricing', 'availability','productStyle'])->where('status', "1");
+		  $data = $productList->where('user_id', $id)->get();
+		  $success  = $data;
+               
+		  
+        $message  = Lang::get("messages.products_list");
+        return sendResponse($success, $message);
+	}
     public function productsList()
     {
         if($this->permisssion !== "product-view")
@@ -452,8 +468,55 @@ class ProductController extends Controller
         return sendResponse($success, Lang::get('messages.product_styles_list'));
     }
 
+    public function createProductStyles(Request $request)
+    {
+        if($this->permisssion !== "product-edit")
+        {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'style' => 'required|string|max:200',
+           
+        ]);
+        
+        if($validator->fails()) {
+            return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+        }
+
+        $validated = $request->all();
+
+        $user = auth()->user();
+        $productStyle = ProductStyle::create([
+            'name' => $validated['style'],
+            
+        ]);
+
+        $success = $productStyle;
+        $message = Lang::get("messages.product_style_created_successfully");
+        return sendResponse($success, $message);
+    }
+
+
 
     // Product listing as per approved supplier list in retailer user
+    public function getSupplierAllProductList($id)
+    {
+        
+   
+        if($this->permisssion !== "marketplace-view")
+        {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+		
+		  $productList = Product::has('pricing')->has('inventory')->has('availability')->with(['description', 'productFormat','userInformation','userProfile','pricing', 'availability','productStyle'])->where('status', "1");
+		  $data = $productList->where('user_id', $id)->get();
+		  $success  = $data;
+		  
+        $message  = Lang::get("messages.products_list");
+        return sendResponse($success, $message);
+	}
+
     public function getSupplierProductList(Request $request)
     {
         if($this->permisssion !== "marketplace-view")

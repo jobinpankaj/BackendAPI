@@ -137,6 +137,34 @@ class OrderController extends Controller
         return sendResponse($success, $message);
     }
 
+    public function supplierOrderListCount()
+{
+    if ($this->permisssion !== "order-view") {
+        return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+    }
+
+    $user = auth()->user();
+    
+    $total_order = Order::where('supplier_id', $user->id)->count();
+    $pending_order = Order::where('status', '0')->where('supplier_id', $user->id)->count();
+    $approved_order = Order::where('status', '1')->where('supplier_id', $user->id)->count();
+    $hold_order = Order::where('status', '2')->where('supplier_id', $user->id)->count();
+    $shipped_order = Order::where('status', '3')->where('supplier_id', $user->id)->count();
+    $delivered_order = Order::where('status', '4')->where('supplier_id', $user->id)->count();
+    $cancelled_order = Order::where('status', '5')->where('supplier_id', $user->id)->count();
+    
+    $success['total_order'] = $total_order;
+    $success['pending_order'] = $pending_order;
+    $success['approved_order'] = $approved_order;
+    $success['hold_order'] = $hold_order;
+    $success['shipped_order'] = $shipped_order;
+    $success['delivered_order'] = $delivered_order;
+    $success['cancelled_order'] = $cancelled_order;
+
+    $message = Lang::get("messages.order_list");
+    return sendResponse($success, $message);
+}
+
     public function updateSupplierOrder(Request $request, $id)
     {
         if($this->permisssion !== "order-edit")
@@ -471,7 +499,33 @@ class OrderController extends Controller
         $message = Lang::get("messages.order_list");
         return sendResponse($success, $message);
     }
-
+    public function retailerOrderListCount()
+    {
+        if ($this->permisssion !== "order-view") {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+    
+        $user = auth()->user();
+        
+        $total_order = Order::where('retailer_id', $user->id)->count();
+        $pending_order = Order::where('status', '0')->where('retailer_id', $user->id)->count();
+        $approved_order = Order::where('status', '1')->where('retailer_id', $user->id)->count();
+        $hold_order = Order::where('status', '2')->where('retailer_id', $user->id)->count();
+        $shipped_order = Order::where('status', '3')->where('retailer_id', $user->id)->count();
+        $delivered_order = Order::where('status', '4')->where('retailer_id', $user->id)->count();
+        $cancelled_order = Order::where('status', '5')->where('retailer_id', $user->id)->count();
+        
+        $success['total_order'] = $total_order;
+        $success['pending_order'] = $pending_order;
+        $success['approved_order'] = $approved_order;
+        $success['hold_order'] = $hold_order;
+        $success['shipped_order'] = $shipped_order;
+        $success['delivered_order'] = $delivered_order;
+        $success['cancelled_order'] = $cancelled_order;
+    
+        $message = Lang::get("messages.order_list_count");
+        return sendResponse($success, $message);
+    }
     public function supplierOrderStatusUpdate(Request $request)
     {
         if($this->permisssion !== "order-edit")

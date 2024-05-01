@@ -24,6 +24,26 @@ class ProductFormatController extends Controller
         return sendResponse($success, Lang::get('messages.product_format_list'));
     }
 
+    public function createProductFormats(request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'unit'    => 'required',
+      ]);
+
+        if($validator->fails()) {
+            return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+        }
+        $productFormat = new ProductFormat();
+        $productFormat->name = $request->name;
+        $productFormat->unit = $request->unit;
+        $productFormat->save();
+        // var_dump($productFormat);
+        $success = $productFormat;
+        return sendResponse($success, Lang::get('messages.product_format_create'));
+    }
+
+
     //depositUpdate
     public function depositUpdate(request $request)
     {

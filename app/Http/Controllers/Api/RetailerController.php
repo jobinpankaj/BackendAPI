@@ -173,60 +173,113 @@ class RetailerController extends Controller
     }
 
     public function retailerList(Request $request)
-    {
-        // dd(888);
-        if($this->permission !== "retailer-view")
-        {
-            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
-        }
-
-        $search = $request->input("search");
-        $user_id = auth()->user()->id;
-        $user_type_id = 4;
-        // $data = RetailerSupplierRequest::where('supplier_id',$user_id)->first();
-        // $check = User::where('id',$data->supplier_id)->first();
+   {
+       if ($this->permission !== "retailer-view") {
+           return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+       }
+   
+       $search = $request->input("search");
+       $user_id = auth()->user()->id;
+       $user_type_id = 4;
+      // $data = RetailerSupplierRequest::where('supplier_id',$user_id)->first();
+      // $check = User::where('id',$data->supplier_id)->first();
         // dd($check);
-        $usersQuery = User::query();
-        if(!empty($search)) {
-            $usersQuery->where(function($query)use($search){
-                $query->where(function($query1)use($search){
-                    $query1->where("first_name",'LIKE',"%".$search."%")->orWhere("last_name",'LIKE',"%".$search."%")->orWhere("email",'LIKE',"%".$search."%")->orWhere("phone_number",'LIKE',"%".$search."%")->orWhereRaw("concat(first_name,' ',last_name) like '%".$search."%'");
-                });
-                $query = $query->orWhereHas('userRoutes',function($query1) use($search){
-                    $query1->where("name",'LIKE',"%".$search."%");
-                });
-            });
-        }
-        $filter_retailer_id = $request->input("filter_retailer_id");
-        if(!empty($filter_retailer_id)){
-            $usersQuery->where(function($query)use($filter_retailer_id){
-                $query->where("id","=",$filter_retailer_id);
-            });
-        }
-        $filter_route_id = $request->input("filter_route_id");
-        if(!empty($filter_route_id)){
-            $usersQuery->whereHas('userRoutes', function($query)use($filter_route_id){
-                $query->where("id","=",$filter_route_id);
-            });
-        }
-        // $usersQuery->whereHas('userRoutes', function($query)use($user_id){
-        //     $query->whereHas('userInformation',function($query1)use($user_id){
-        //         $query1->where("id",$user_id);
-        //     });
-        // });
-        $usersQuery->where("user_type_id","=",$user_type_id);
-        $usersQuery->where("status","=","1");
-        $usersQuery->with(['userProfile','userMainAddress']);
-        $usersQuery->with('userRoutes',function($query)use($user_id){
-            $query->whereHas('userInformation',function($query1)use($user_id){
-                $query1->where("id",$user_id);
-            });
-        });
-        $data = $usersQuery->get();
-        $success  = $data;
-        $message  = Lang::get("messages.retailer_user_list");
-        return sendResponse($success, $message);
-    }
+       $usersQuery = User::query();
+       if (!empty($search)) {
+           $usersQuery->where(function ($query) use ($search) {
+               $query->where(function ($query1) use ($search) {
+                   $query1->where("first_name", 'LIKE', "%" . $search . "%")
+                       ->orWhere("last_name", 'LIKE', "%" . $search . "%")
+                       ->orWhere("email", 'LIKE', "%" . $search . "%")
+                       ->orWhere("phone_number", 'LIKE', "%" . $search . "%")
+                       ->orWhereRaw("concat(first_name,' ',last_name) like '%" . $search . "%'");
+               });
+               $query = $query->orWhereHas('userRoutes', function ($query1) use ($search) {
+                   $query1->where("name", 'LIKE', "%" . $search . "%");
+               });
+           });
+       }
+   
+       $filter_retailer_id = $request->input("filter_retailer_id");
+       if (!empty($filter_retailer_id)) {
+           $usersQuery->where(function ($query) use ($filter_retailer_id) {
+               $query->where("id", "=", $filter_retailer_id);
+           });
+       }
+   
+       $filter_route_id = $request->input("filter_route_id");
+       if (!empty($filter_route_id)) {
+           $usersQuery->whereHas('userRoutes', function ($query) use ($filter_route_id) {
+               $query->where("id", "=", $filter_route_id);
+           });
+       }
+      // $usersQuery->whereHas('userRoutes', function($query)use($user_id){
+      //         $query->whereHas('userInformation',function($query1)use($user_id){
+      //             $query1->where("id",$user_id);
+      //         });
+      //     });
+
+       $usersQuery->where("user_type_id", "=", $user_type_id)
+           ->where("status", "=", "1")
+           ->with(['userProfile', 'userMainAddress'])
+           ->with(['userRoutes' => function ($query) use ($user_id) {
+               $query->whereHas('userInformation', function ($query1) use ($user_id) {
+                   $query1->where("id", $user_id);
+               });
+           }]);
+   
+       $data = $usersQuery->get();
+   
+       // Loop through each user and attach supplier data
+       foreach ($data as $user) {
+           $user->supplier_status = 0;
+           $user->supplier_data = [];
+           $supplier_data = RetailerSupplierRequest::where(['retailer_id' => $user->id, 'supplier_id' => $user_id])->first();
+           if ($supplier_data) {
+               $user->supplier_status = $supplier_data->status;
+               $user->supplier_data = $supplier_data;
+           }
+       }
+   
+       $success = $data;
+       $message = Lang::get("messages.retailer_user_list");
+       return sendResponse($success, $message);
+   }
+
+ //POST sendRequestToRetailer
+ public function sendRequestToRetailer(Request $request)
+ {
+     if($this->permission != 'retailer-view'){
+         return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+     }
+     $user_id = Auth::user()->id;
+     $validator = Validator::make($request->all(), [
+         'retailer_id' => 'required',
+         'request_note' => 'required',
+     ]);
+     if ($validator->fails()) return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+
+     $retailer_id = $request->input("retailer_id");
+     $requestData = RetailerSupplierRequest::where("supplier_id","=",$user_id)->where("retailer_id","=",$retailer_id)->get();
+     // dd($requestData->count());
+     if($requestData->count() < 1)
+     {
+         RetailerSupplierRequest::create([
+             "supplier_id" => $user_id,
+             "retailer_id" => $retailer_id,
+             "request_note" => $request->input("request_note"),
+         ]);
+         $success = [];
+         $message  = Lang::get("messages.request_sent_successfully");
+         return sendResponse($success, $message); 
+     }
+     else{
+         $success = [];
+         $message  = Lang::get("messages.already_request_sent_successfully");
+         return sendResponse($success, $message); 
+     }
+ }
+
     public function retailerListDetail(Request $request,$id="")
     {
         if($this->permission !== "retailer-view")
