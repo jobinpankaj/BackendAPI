@@ -225,7 +225,7 @@ Route::prefix('retailer')->group(function() {
                 Route::post('deleteUserRole', [RolesAndPermissionController::class, 'deleteRole']);
                 Route::get('getUserList',[RolesAndPermissionController::class,'getUserList']);
 
-                Route::get("getSupplierAllProduct/{id}"[ProductController::class'getSupplierAllProductList']);
+                Route::get("getSupplierAllProduct/{id}"[ProductController::class,'getSupplierAllProductList']);
                 Route::get("getLocalSuppliers",[RetailerController::class,'getLocalSuppliers']);
                 Route::get("getSupplierListOnDashboard",[RetailerController::class,'getSupplierListOnDashboard']);
                 Route::get("getOrderListOnDashboard",[RetailerController::class,'getOrderListOnDashboard']);
