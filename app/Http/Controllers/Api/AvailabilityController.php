@@ -32,7 +32,7 @@ class AvailabilityController extends Controller
         }
 
         $user = auth()->user();
-        $availabilityList = Availability::with(['product', 'allocations', 'maximums', 'visibityInformation', 'product.userInformation'])->where('added_by', $user->id)->get();
+        $availabilityList = Availability::with(['product', 'allocations', 'maximums', 'visibityInformation', 'product.userInformation','product.productFormat'])->where('added_by', $user->id)->get();
 
         $success = $availabilityList;
         $message = Lang::get("messages.availability_list");
