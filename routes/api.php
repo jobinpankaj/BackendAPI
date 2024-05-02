@@ -225,7 +225,7 @@ Route::prefix('retailer')->group(function() {
                 Route::post('deleteUserRole', [RolesAndPermissionController::class, 'deleteRole']);
                 Route::get('getUserList',[RolesAndPermissionController::class,'getUserList']);
 
-                Route::get("getSupplierAllProduct/{id}"[ProductController::class,'getSupplierAllProductList']);
+                Route::get("getSupplierAllProduct/{id}",[ProductController::class,'getSupplierAllProductList']);
                 Route::get("getLocalSuppliers",[RetailerController::class,'getLocalSuppliers']);
                 Route::get("getSupplierListOnDashboard",[RetailerController::class,'getSupplierListOnDashboard']);
                 Route::get("getOrderListOnDashboard",[RetailerController::class,'getOrderListOnDashboard']);
@@ -243,15 +243,15 @@ Route::prefix('retailer')->group(function() {
                 Route::get("clearCart",[CartController::class,'clearCart']);
 
                 Route::get("orderListing",[OrderController::class,'retailerOrderList']);
-  //retailer Orders status Count
-  Route::get('orderListingStatusCount', [OrderController::class, 'retailerOrderListCount']);
+                //retailer Orders status Count
+                Route::get('orderListingStatusCount', [OrderController::class, 'retailerOrderListCount']);
                 Route::get('orderDetail/{id}', [OrderController::class, 'orderDetail']);
                 Route::post("createOrderByRetailer",[CartController::class,'createOrderByRetailer']);
 
             });
 
             // Supplier - Products/Warehouse/Inventory/Stock/Pricing/Availability/Inventory Transfer/Order
-Route::prefix('supplier')->group(function() {
+                Route::prefix('supplier')->group(function() {
                 //supplier Dashboard
 
                 //Route::get('Dashboard',[RolesAndPermissionController::class,'topRetailerList']);
