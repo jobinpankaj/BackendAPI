@@ -146,7 +146,9 @@ Route::prefix('supplier')->group(function() {
 
             Route::post('depositUpdate',[ProductFormatController::class,'depositUpdate']);
 
-
+           //Create Supplier changing Retailer Group name 
+            Route::post('createSupplierGroupName', [ProfileController::class, 'createSupplierGroup']);
+            
             Route::post('link/distributors', [SupplierController::class, 'linkDistributors']);
             Route::get('getLinkedDistributors', [SupplierController::class, 'getLinkedDistributors']);
             Route::get('getLinkedDistributorsCompany', [SupplierController::class, 'getLinkedDistributorsCompany']);
@@ -330,6 +332,7 @@ Route::prefix('retailer')->group(function() {
                 Route::post('order/{id}/update', [OrderController::class, 'updateSupplierOrder']);
                 Route::get('retailerList',[RetailerController::class,'retailerList']);
                 Route::get('retailerList/{id}',[RetailerController::class,'retailerListDetail']);
+                Route::post('order/updatequantity', [OrderController::class, 'updateQuantity']);
 
                 //invoices
                 Route::get("orderInvoice/{id}",[InvoiceDetailController::class,'createOrderInvoice']);
