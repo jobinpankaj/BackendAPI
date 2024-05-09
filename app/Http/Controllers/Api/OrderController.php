@@ -176,32 +176,39 @@ class OrderController extends Controller
     }
 
     public function supplierOrderListCount()
-{
-    if ($this->permisssion !== "order-view") {
-        return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+    {
+        if ($this->permisssion !== "order-view") {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+    
+        $user = auth()->user();
+    
+        $total_order = Order::where('supplier_id', $user->id)->count();
+        $pending_order = Order::where('status', '0')->where('supplier_id', $user->id)->count();
+        $approved_order = Order::where('status', '1')->where('supplier_id', $user->id)->count();
+        $hold_order = Order::where('status', '2')->where('supplier_id', $user->id)->count();
+        $shipped_order = Order::where('status', '3')->where('supplier_id', $user->id)->count();
+        $delivered_order = Order::where('status', '4')->where('supplier_id', $user->id)->count();
+        $cancelled_order = Order::where('status', '5')->where('supplier_id', $user->id)->count();
+    
+        // Calculate total amount of paid orders
+        $paid_total_amount = Order::where('status', '6')->where('supplier_id', $user->id)->sum('total_amount');
+    
+        // Calculate total amount of unpaid orders
+         $unpaid_total_amount = Order::where('status', '7')->where('supplier_id', $user->id)->sum('total_amount');
+    
+        $success['total_order'] = $total_order;
+        $success['pending_order'] = $pending_order;
+        $success['approved_order'] = $approved_order;
+        $success['hold_order'] = $hold_order;
+        $success['shipped_order'] = $shipped_order;
+        $success['delivered_order'] = $delivered_order;
+        $success['cancelled_order'] = $cancelled_order;
+        $success['paid_total_amount'] = $paid_total_amount;
+        $success['unpaid_total_amount'] = $unpaid_total_amount;
+        $message = Lang::get("messages.order_list");
+        return sendResponse($success, $message);
     }
-
-    $user = auth()->user();
-    
-    $total_order = Order::where('supplier_id', $user->id)->count();
-    $pending_order = Order::where('status', '0')->where('supplier_id', $user->id)->count();
-    $approved_order = Order::where('status', '1')->where('supplier_id', $user->id)->count();
-    $hold_order = Order::where('status', '2')->where('supplier_id', $user->id)->count();
-    $shipped_order = Order::where('status', '3')->where('supplier_id', $user->id)->count();
-    $delivered_order = Order::where('status', '4')->where('supplier_id', $user->id)->count();
-    $cancelled_order = Order::where('status', '5')->where('supplier_id', $user->id)->count();
-    
-    $success['total_order'] = $total_order;
-    $success['pending_order'] = $pending_order;
-    $success['approved_order'] = $approved_order;
-    $success['hold_order'] = $hold_order;
-    $success['shipped_order'] = $shipped_order;
-    $success['delivered_order'] = $delivered_order;
-    $success['cancelled_order'] = $cancelled_order;
-
-    $message = Lang::get("messages.order_list");
-    return sendResponse($success, $message);
-}
 
     public function updateSupplierOrder(Request $request, $id)
     {
@@ -559,20 +566,61 @@ class OrderController extends Controller
         return sendResponse($success, $message);
     }
 
-    public function retailerOrderList()
+    public function retailerOrderList(Request $request)
     {
-       // if($this->permisssion !== "order-view")
-       // {
-       //     return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
-       // }
-
+        if($this->permisssion !== "order-view")
+        {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+       
         $user = auth()->user();
-        $data = Order::with(['items', 'supplierInformation'])->where('retailer_id', $user->id)->orderBy('created_at','DESC')->get();
-
-        $success = $data;
+     
+        // Extracting URL parameters
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $supplierId = $request->input('supplier_id');
+        $distributorId = $request->input('distributor_id');
+    
+        $fromDateCarbon = null;
+        $toDateCarbon = null;
+    
+        if ($fromDate) {
+            $fromDateCarbon = Carbon::createFromFormat('Y-m-d', $fromDate)->startOfDay();
+        }
+    
+        if ($toDate) {
+            $toDateCarbon = Carbon::createFromFormat('Y-m-d', $toDate)->endOfDay();
+        }
+        $data = Order::with(['items', 'supplierInformation', 'orderDistributors', 'orderDistributors.distributorInfo'])
+            ->has("items")
+            ->where('retailer_id', $user->id);
+    
+        // Applying date filters if dates are provided
+        if ($fromDateCarbon && $toDateCarbon) {
+            $data->whereBetween('created_at', [$fromDateCarbon, $toDateCarbon]);
+        } elseif ($fromDateCarbon) {
+            $data->where('created_at', '>=', $fromDateCarbon);
+        } elseif ($toDateCarbon) {
+            $data->where('created_at', '<=', $toDateCarbon);
+        }
+    
+        if ($supplierId) {
+            $data->where('supplier_id', $supplierId);
+        }
+    
+        if ($distributorId) {
+            $data->whereHas('orderDistributors', function ($query) use ($distributorId) {
+                $query->where('distributor_id', $distributorId);
+            });
+        }
+    
+        $data->orderBy('created_at', 'DESC');
+        $success = $data->get();
+    
         $message = Lang::get("messages.order_list");
         return sendResponse($success, $message);
     }
+
     public function retailerOrderListCount()
     {
         if ($this->permisssion !== "order-view") {
@@ -588,7 +636,13 @@ class OrderController extends Controller
         $shipped_order = Order::where('status', '3')->where('retailer_id', $user->id)->count();
         $delivered_order = Order::where('status', '4')->where('retailer_id', $user->id)->count();
         $cancelled_order = Order::where('status', '5')->where('retailer_id', $user->id)->count();
-        
+    
+        // Calculate total amount of paid orders
+        $paid_total_amount = Order::where('status', '6')->where('retailer_id', $user->id)->sum('total_amount');
+        // Calculate total amount of unpaid orders
+        $unpaid_total_amount = Order::where('status', '7')->where('supplier_id', $user->id)->sum('total_amount');
+       
+    
         $success['total_order'] = $total_order;
         $success['pending_order'] = $pending_order;
         $success['approved_order'] = $approved_order;
@@ -596,10 +650,12 @@ class OrderController extends Controller
         $success['shipped_order'] = $shipped_order;
         $success['delivered_order'] = $delivered_order;
         $success['cancelled_order'] = $cancelled_order;
-    
+        $success['paid_total_amount'] = $paid_total_amount;
+        $success['unpaid_total_amount'] = $unpaid_total_amount;
         $message = Lang::get("messages.order_list_count");
         return sendResponse($success, $message);
     }
+
     public function supplierOrderStatusUpdate(Request $request)
     {
         if($this->permisssion !== "order-edit")
