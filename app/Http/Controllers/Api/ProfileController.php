@@ -262,6 +262,34 @@ class ProfileController extends Controller
             return sendError('Not Found', ['error' => Lang::get("messages.not_found")], 404);
         }
     }
+    
+
+     // Supplier changing Retailer Group name 
+    public function createSupplierGroup(Request $request)
+    { 
+         $validator = Validator::make($request->all(), [
+             'user_id' => 'required|numeric|max:200',
+             'group_name' => 'required|string|max:200'
+         ]);
+         if ($validator->fails()) {
+             return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+         }
+     
+         $validated = $validator->validated();
+     
+         $user = User::find($request->user_id);
+         if($user)
+         {
+             $this->addUserProfile($request,$request->user_id);
+            
+             $success  = [];
+             $message  = Lang::get("messages.profile_updated_successfully");
+             return sendResponse($success, $message);
+         }
+         else{
+             return sendError('Not Found', ['error' => Lang::get("messages.not_found")], 404);
+         }
+    }
 
     public function saveSupplierAddress(Request $request)
     {

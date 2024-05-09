@@ -41,6 +41,8 @@ class Order extends Model
                 return 'Delivered';
             case '5':
                 return 'Cancelled';
+            case '6':
+                return 'Paid';
         }
     }
 

@@ -33,17 +33,55 @@ class OrderController extends Controller
         dd($this->permisssion);
     }
 
-    public function supplierOrderList()
+    public function supplierOrderList(Request $request)
     {
         if($this->permisssion !== "order-view")
         {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
-
+       
         $user = auth()->user();
-        $data = Order::with(['items', 'retailerInformation', 'orderDistributors', 'orderDistributors.distributorInfo'])->has("items")->where('supplier_id', $user->id)->orderBy('created_at','DESC')->get();
+     
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $retailerId = $request->input('retailer_id');
+        $distributorId = $request->input('distributor_id');
 
-        $success = $data;
+        $fromDateCarbon = null;
+        $toDateCarbon = null;
+
+        if ($fromDate) {
+            $fromDateCarbon = Carbon::createFromFormat('Y-m-d', $fromDate)->startOfDay();
+        }
+
+        if ($toDate) {
+            $toDateCarbon = Carbon::createFromFormat('Y-m-d', $toDate)->endOfDay();
+        }
+        $data = Order::with(['items', 'retailerInformation', 'orderDistributors', 'orderDistributors.distributorInfo'])
+            ->has("items")
+            ->where('supplier_id', $user->id);
+
+        if ($fromDateCarbon && $toDateCarbon) {
+            $data->whereBetween('created_at', [$fromDateCarbon, $toDateCarbon]);
+        } elseif ($fromDateCarbon) {
+            $data->where('created_at', '>=', $fromDateCarbon);
+        } elseif ($toDateCarbon) {
+            $data->where('created_at', '<=', $toDateCarbon);
+        }
+
+        if ($retailerId) {
+            $data->where('retailer_id', $retailerId);
+        }
+
+        if ($distributorId) {
+            $data->whereHas('orderDistributors', function ($query) use ($distributorId) {
+                $query->where('distributor_id', $distributorId);
+            });
+        }
+
+        $data->orderBy('created_at', 'DESC');
+        $success = $data->get();
+
         $message = Lang::get("messages.order_list");
         return sendResponse($success, $message);
     }
@@ -234,6 +272,42 @@ class OrderController extends Controller
         $message = Lang::get("messages.supplier_order_updated_successfully");
         return sendResponse($success, $message);
     }
+
+    public function updateQuantity(Request $request)
+    {
+        if ($this->permisssion !== "order-edit") {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+     
+        $validatedData = $request->validate([
+            'order_id' => 'required',
+            'id' => 'required',
+            'quantity' => 'required|numeric|min:0'
+        ]);
+    
+        $order_id = $validatedData['order_id'];
+        $id = $validatedData['id'];
+        $quantity = $validatedData['quantity'];
+        
+        $orderItem = OrderItem::where('order_id', $order_id)->where('id', $id)->first();
+    
+        if (!$orderItem) {
+            return sendError('Order item not found', [], 404);
+        }
+    
+        $subtotal = 0; 
+        
+        if ($quantity > 0) {
+            $subtotal = ($orderItem->price * $quantity) + $orderItem->tax;
+        }
+        
+        $orderItem->quantity = $quantity;
+        $orderItem->sub_total = $subtotal;
+        $orderItem->save();
+        
+        return sendResponse(['data' => $orderItem], 'Quantity updated successfully');
+    }
+    
 
     public function distributorOrderList()
     {
