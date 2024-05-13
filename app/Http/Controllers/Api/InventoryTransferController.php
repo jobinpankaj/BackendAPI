@@ -289,28 +289,35 @@ class InventoryTransferController extends Controller
     }
 
     public function getInventoryRecieveList()
-    {
+    { 
         if($this->permisssion !== "inventory-view")
         {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
         
         $user = auth()->user();
-        // dd($user);
-        $inventoryTransfers = InventoryTransfer::where('recipient', $user->id)->get();
+        //  dd($user);
+      $inventoryTransfers = InventoryTransfer::where('recipient', $user->id)->get();
         foreach($inventoryTransfers as $key => $value)
         {
             $inventory_sender = User::where('id',$value->sender)->first();
             $inventory_reciever = User::where('id',$value->recipient)->first();
             
-            $value->senderName = $inventory_sender['first_name'] .''. $inventory_sender['last_name'] ?? null;
-            $value->recipentName = $inventory_reciever['first_name'] .''.$inventory_reciever['last_name'] ?? null;
+           
+            $value->senderName = isset($inventory_sender['first_name']) && isset($inventory_sender['last_name']) 
+            ? $inventory_sender['first_name'] . ' ' . $inventory_sender['last_name'] 
+            : null;
+
+            $value->recipientName = isset($inventory_reciever['first_name']) && isset($inventory_reciever['last_name'])
+            ? $inventory_reciever['first_name'] . ' ' . $inventory_reciever['last_name']
+            : null;
 
              $inventoryTransferProd = InventoryTransferProduct::select(DB::raw('SUM(send) AS total_send'),DB::raw('SUM(received) AS total_received'),DB::raw('SUM(broken) AS total_broken'))->where('inventory_transfer_id',$value->id)->first();
             
-            $value->send = $inventoryTransferProd->total_send ?? null;
-            $value->recieved = $inventoryTransferProd->total_received ?? null;
-            $value->broken = $inventoryTransferProd->total_broken ?? null;
+              $value->send = isset($inventoryTransferProd->total_send) ? $inventoryTransferProd->total_send : null;
+              $value->received = isset($inventoryTransferProd->total_received) ? $inventoryTransferProd->total_received : null;
+              $value->broken = isset($inventoryTransferProd->total_broken) ? $inventoryTransferProd->total_broken : null;
+
         }
         
         $success = $inventoryTransfers;

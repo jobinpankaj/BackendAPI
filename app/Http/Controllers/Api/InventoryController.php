@@ -21,17 +21,17 @@ class InventoryController extends Controller
     }
 
     public function inventoryList(Request $request)
-    {
+    { 
         if($this->permisssion !== "inventory-view")
         {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
         
-   $user = auth()->user();
-    $search = $request->input("search");
-    // \DB::enableQueryLog
+        $user = auth()->user();
+        $search = $request->input("search");
+        // \DB::enableQueryLog
 
-$user = auth()->user();
+        $user = auth()->user();
         $search = $request->input("search");
 
         $inventoryQuery = Inventory::query();
@@ -40,8 +40,25 @@ $user = auth()->user();
             $inventoryQuery->whereHas('product', function ($query) use ($search) {
                 $query->where("product_name", "LIKE", "%$search%");
             });
+
+            
         }
 
+        if (!empty($request->input("filter_supplier"))) {
+            $inventoryQuery->where('supplier_id',$request->input("filter_supplier") );
+           
+
+            
+        }
+    
+        if (!empty($request->input("filter_product_format"))) {
+            $inventoryQuery->whereHas('product', function ($query) use ($request) { // Pass $request into the closure
+                $query->where("product_format", $request->input("filter_product_format"));
+            });
+        }
+        
+        
+    
         $inventoryResults = $inventoryQuery
             ->with(['distributor', 'userProfile', 'supplierInfo', 'product', 'product.productFormat', 'product.pricing', 'warehouse', 'stocks'])
             ->where('added_by', $user->id)
@@ -50,49 +67,50 @@ $user = auth()->user();
 
         $formattedInventory = [];
 
-      foreach ($inventoryResults as $inventory) {
-    $totalQuantity = $inventory->quantity;
-    $warehouseName = $inventory->warehouse ? $inventory->warehouse->name : 'No Warehouse Assigned';
+          foreach ($inventoryResults as $inventory) {
+          $totalQuantity = $inventory->quantity;
+          $warehouseName = $inventory->warehouse ? $inventory->warehouse->name : 'No Warehouse Assigned';
 
-    $formattedInventory[] = [
-        'product_name' => $inventory->product->product_name,
-        'format' => $inventory->product->productFormat->name,
-        'batch_number' => $inventory->batch,
-        'total' => $totalQuantity,
-        'at_warehouse' => $warehouseName,
-        // Include additional fields here
-        'id' => $inventory->id,
-        'added_by' => $inventory->added_by,
-        'supplier_id' => $inventory->supplier_id,
-        'distributor_id' => $inventory->distributor_id,
-        'aisle' => $inventory->aisle,
-        'shelf' => $inventory->shelf,
-        'aisle_name' => $inventory->aisle_name,
-        'shelf_name' => $inventory->shelf_name,
-        'is_visible' => $inventory->is_visible,
-        'created_at' => $inventory->created_at,
-        'updated_at' => $inventory->updated_at,
-        'stock_info' => [
-            'at_warehouse' => 0,
-            'distributor_warehouse' => 0,
-            'in_transit' => 0,
-            'delivery' => 0,
-        ],
-        'distributor' => $inventory->distributor,
-        'user_profile' => $inventory->userProfile,
-        'supplier_info' => $inventory->supplierInfo,
-        'product' => $inventory->product,
-        'warehouse' => $inventory->warehouse,
-        'stocks' => $inventory->stocks,
-    ];
-}
+          $formattedInventory[] = [
+             'product_name' => $inventory->product ? $inventory->product->product_name : null,
+             'format' => $inventory->product && $inventory->product->productFormat ? $inventory->product->productFormat->name : null,
+             'batch_number' => $inventory->batch,
+             'total' => $totalQuantity,
+             'at_warehouse' => $warehouseName,
+             // Include additional fields here
+             'id' => $inventory->id,
+             'added_by' => $inventory->added_by,
+             'supplier_id' => $inventory->supplier_id,
+             'distributor_id' => $inventory->distributor_id,
+             'aisle' => $inventory->aisle,
+             'shelf' => $inventory->shelf,
+             'aisle_name' => $inventory->aisle_name,
+             'shelf_name' => $inventory->shelf_name,
+             'is_visible' => $inventory->is_visible,
+             'created_at' => $inventory->created_at,
+             'updated_at' => $inventory->updated_at,
+             'stock_info' => [
+                 'at_warehouse' => 0,
+                 'distributor_warehouse' => 0,
+                 'in_transit' => 0,
+                 'delivery' => 0,
+                ],
+             'distributor' => $inventory->distributor,
+             'user_profile' => $inventory->userProfile,
+             'supplier_info' => $inventory->supplierInfo,
+             'product' => $inventory->product,
+             'warehouse' => $inventory->warehouse,
+             'stocks' => $inventory->stocks,
+            ];
+        }
 
 
         $success = $formattedInventory;
         $message = Lang::get("messages.inventory_list");
-        return sendResponse($success, $message);
-    
-  }
+       return sendResponse($success, $message);
+    }
+
+
     public function getTransferWarehouse(request $request ,$id)
     {
         if($this->permisssion !== "inventory-view")

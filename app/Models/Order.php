@@ -43,6 +43,8 @@ class Order extends Model
                 return 'Cancelled';
             case '6':
                 return 'Paid';
+            case '7':
+                return 'Unpaid';
         }
     }
 

@@ -248,37 +248,48 @@ class RetailerController extends Controller
 
  //POST sendRequestToRetailer
  public function sendRequestToRetailer(Request $request)
- {
-     if($this->permission != 'retailer-view'){
-         return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
-     }
-     $user_id = Auth::user()->id;
-     $validator = Validator::make($request->all(), [
-         'retailer_id' => 'required',
-         'request_note' => 'required',
-     ]);
-     if ($validator->fails()) return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+   {
+       if($this->permission != 'retailer-view'){
+           return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+       }
+       $user_id = Auth::user()->id;
+       $validator = Validator::make($request->all(), [
+           'retailer_id' => 'required',
+           'request_note' => 'required',
+       ]);
+       if ($validator->fails()) return sendError(Lang::get('validation_error'), $validator->errors(), 422);
 
-     $retailer_id = $request->input("retailer_id");
-     $requestData = RetailerSupplierRequest::where("supplier_id","=",$user_id)->where("retailer_id","=",$retailer_id)->get();
-     // dd($requestData->count());
-     if($requestData->count() < 1)
-     {
-         RetailerSupplierRequest::create([
-             "supplier_id" => $user_id,
-             "retailer_id" => $retailer_id,
-             "request_note" => $request->input("request_note"),
-         ]);
-         $success = [];
-         $message  = Lang::get("messages.request_sent_successfully");
-         return sendResponse($success, $message); 
-     }
-     else{
-         $success = [];
-         $message  = Lang::get("messages.already_request_sent_successfully");
-         return sendResponse($success, $message); 
-     }
- }
+       $retailer_id = $request->input("retailer_id");
+       $requestData = RetailerSupplierRequest::where("supplier_id","=",$user_id)->where("retailer_id","=",$retailer_id)->get();
+       // dd($requestData->count());
+       if($requestData->count() < 1)
+       {
+           RetailerSupplierRequest::create([
+               "supplier_id" => $user_id,
+               "retailer_id" => $retailer_id,
+               "request_note" => $request->input("request_note"),
+           ]);
+  
+           $email = User::where('id',$retailer_id)->pluck('email')->first();
+         // $email = "mailto:yadavranjana558@gmail.com";
+           // Send email with text content
+           Mail::raw( $request->input("request_note")??'', function ($message) use ($email) {
+           $message->to($email)
+            ->subject('Retailer Notes');
+           });
+
+           $success = [];
+           $message  = Lang::get("messages.request_sent_successfully");
+           return sendResponse($success, $message); 
+       }
+
+
+       else{
+           $success = [];
+           $message  = Lang::get("messages.already_request_sent_successfully");
+           return sendResponse($success, $message); 
+       }
+   }
 
     public function retailerListDetail(Request $request,$id="")
     {
