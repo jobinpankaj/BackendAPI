@@ -125,6 +125,9 @@ Route::prefix('distributor')->group(function() {
 
 Route::prefix('supplier')->group(function() {
 
+
+             //Create Supplier create Group Distributor
+             Route::post('createGroupDistributor',[DistributorController::class, 'createGroupDistributor']);
             //Create Supplier Upload Order file  
             Route::post('uploadOrderFile',[OrderController::class,'uploadOrderFile']);
             Route::get('getUploadFileList/{id}', [OrderController::class, 'getUploadFileList']);

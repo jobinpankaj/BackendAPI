@@ -288,171 +288,90 @@ class ProductController extends Controller
         return sendResponse($success, $message);
     }
 
+    // update Product Start
     public function updateProduct(Request $request, $id)
     {
-        if($this->permisssion !== "product-edit")
-        {
+        if ($this->permisssion !== "product-edit") {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
         }
 
-        $user = auth()->user();
+       $user = auth()->user();
         $product = Product::with('description')->where('user_id', $user->id)->find($id);
 
-        if(!$product) {
-            return sendError(Lang::get('messages.product_not_found'), Lang::get('messages.product_not_found'), 404);
+        if (!$product) {
+           return sendError(Lang::get('messages.product_not_found'), Lang::get('messages.product_not_found'), 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'product_name' => 'required|string',
-            'product_type' => 'required|string',
-            'product_format' => 'required|numeric|exists:product_formats,id',
-            'product_desc.*.language_id' => 'nullable|numeric',
-            'product_desc.*.description' => 'nullable|string',
-            'product_desc.*.public_description' => 'nullable|string',
-            'style' => 'required|numeric',
-            'sub_category' => 'required|numeric',
-            'alcohol_percentage' => 'required|numeric|between:0,100',
-            'organic' => 'nullable|numeric',
-            // 'product_image' => 'nullable',
-            // 'product_label' => 'nullable'
-        ]);
+        'product_name' => 'required|string',
+        'product_type' => 'required|string',
+        'product_format' => 'required|numeric|exists:product_formats,id',
+        'product_desc.*.language_id' => 'nullable|numeric',
+        'product_desc.*.description' => 'nullable|string',
+        'product_desc.*.public_description' => 'nullable|string',
+        'style' => 'required|numeric',
+        'sub_category' => 'required|numeric',
+        'alcohol_percentage' => 'required|numeric|between:0,100',
+        'organic' => 'nullable|numeric',
+       ]);
 
-        if($validator->fails()) {
-            return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+        if ($validator->fails()) {
+           return sendError(Lang::get('validation_error'), $validator->errors(), 422);
         }
 
-        $validated = $request->all();
-        
-        // Update Product
-        $product->product_name = $validated['product_name'];
-        $product->product_type = $validated['product_type'];
-        $product->product_format = $validated['product_format'];
-        $product->style = $validated['style'];
-        $product->sub_category = $validated['sub_category'];
-        $product->sap_lowbla = $validated['sap_lowbla'];
-        $product->sap_metro = $validated['sap_metro'];
-        $product->sap_showbay = $validated['sap_showbay'];
-        $product->is_organic = $validated['organic'];
-        $product->alcohol_percentage = $validated['alcohol_percentage'];
+       $validated = $validator->validated();
 
-        if($request->has("product_image") && $request->has('product_label')) {
-            
-            $base64DataProduct = $request->input('product_image');
-            $base64DataLabel = $request->input('product_label');
+        // Update Product Details
+       $product->fill($validated);
 
-            // Remove the extra URI part from the base64 data
-            $imageDataProduct = preg_replace('/data:image\/(.*?);base64,/', '', $base64DataProduct);
-            $imageDataLabel = preg_replace('/data:image\/(.*?);base64,/', '', $base64DataLabel);
-
-            // Get the image extension from base64 data
-            $extensionProduct = $this->getImageExtensionFromBase64($base64DataProduct);
-            $extensionLabel = $this->getImageExtensionFromBase64($imageDataLabel);
-
-            $fileNameProduct = uniqid() . '.' . $extensionProduct;
-            $fileNameLabel = uniqid() . '.' . $extensionLabel;
-
-            $imageProduct = Image::make(base64_decode($imageDataProduct));
-            $imageLabel = Image::make(base64_decode($imageDataLabel));
-
-            $imageProduct->save(public_path('storage/product_images/' . $fileNameProduct));
-            $imageLabel->save(public_path('storage/product_images/' . $fileNameLabel));
-
-            $finalProductImage = 'product_images/'.$fileNameProduct;
-            $finalLabelImage = 'product_images/'.$fileNameLabel;
-            
-            $logoImage = Image::make(base64_decode($imageDataLabel))->resize(250, 250);
-            $incomingImage = Image::make(base64_decode($imageDataProduct));
-            
-            $incomingImage->insert($logoImage, 'center');
-            $newFileMimeType = $extensionProduct;
-            $newFileName = Str::random(40).'.'.$newFileMimeType;
-            $incomingImage->save(public_path('storage/product_images/'.$newFileName));
-            $finalResult = 'product_images/'.$newFileName;
-            
-            // Update product
-            $product["product_image"] = $finalProductImage;
-            $product["label_image"] = $finalLabelImage;
-            $product["combined_image"] = $finalResult;
-        }
-        else if($request->has("product_image")) {
-            
-            $base64DataProduct = $request->input('product_image');
-            // $base64DataLabel = $request->input('product_label');
-
-            // Remove the extra URI part from the base64 data
-            $imageDataProduct = preg_replace('/data:image\/(.*?);base64,/', '', $base64DataProduct);
-            // $imageDataLabel = preg_replace('/data:image\/(.*?);base64,/', '', $base64DataLabel);
-
-            // Get the image extension from base64 data
-            $extensionProduct = $this->getImageExtensionFromBase64($base64DataProduct);
-            // $extensionLabel = $this->getImageExtensionFromBase64($imageDataLabel);
-
-            $fileNameProduct = uniqid() . '.' . $extensionProduct;
-            // $fileNameLabel = uniqid() . '.' . $extensionLabel;
-
-            $imageProduct = Image::make(base64_decode($imageDataProduct));
-            // $imageLabel = Image::make(base64_decode($imageDataLabel));
-
-            $imageProduct->save(public_path('storage/product_images/' . $fileNameProduct));
-            // $imageLabel->save(public_path('storage/product_images/' . $fileNameLabel));
-
-            $finalProductImage = 'product_images/'.$fileNameProduct;
-            // $finalLabelImage = 'product_images/'.$fileNameLabel;
-            
-            $logoImage = Image::make(base64_decode($imageDataProduct))->resize(250, 250);
-            $incomingImage = Image::make(base64_decode($imageDataProduct));
-            
-            $incomingImage->insert($logoImage, 'center');
-            $newFileMimeType = $extensionProduct;
-            $newFileName = Str::random(40).'.'.$newFileMimeType;
-            $incomingImage->save(public_path('storage/product_images/'.$newFileName));
-            $finalResult = 'product_images/'.$newFileName;
-            
-            // Update product
-            $product["product_image"] = $finalProductImage;
-            // $product["label_image"] = $finalLabelImage;
-            $product["combined_image"] = $finalResult;
+       // Update Product Images
+      if ($request->has("product_image")) {
+          $product->product_image = $this->saveImage($request->input('product_image'));
         }
 
-        if($request->has("barcode_image")){
-            $base64DataBarcode = $request->input('barcode_image');
-            $imageDataBarcode = preg_replace('/data:image\/(.*?);base64,/', '', $base64DataBarcode);
-            $extensionBarcode = $this->getImageExtensionFromBase64($imageDataBarcode);
-
-            $fileNameBarcode = uniqid() . '.' . $extensionBarcode;
-            $imageBarcode = Image::make(base64_decode($imageDataBarcode));
-
-            $imageBarcode->save(public_path('storage/product_images/' . $fileNameBarcode));
-            $finalBarcodeImage = 'product_images/'.$fileNameBarcode;
-            $product["barcode_image"] = $finalBarcodeImage;
+      if ($request->has("product_label")) {
+          $product->label_image = $this->saveImage($request->input('product_label'));
         }
 
-        // Updating description
-        $productDescs = [];
-
-        foreach(json_decode($validated['product_desc']) as $productDesc)
-        {
-            $productDescription = ProductDescription::updateOrCreate([
-                'product_id' => $product->id,
-                'language_id' => $productDesc->language_id
-            ],[
-                
-                'description' => $productDesc->description,
-                'public_description' => $productDesc->public_description,
-            ]);
-
-            array_push($productDescs, $productDescription);
+      if ($request->has("barcode_image")) {
+          $product->barcode_image = $this->saveImage($request->input('barcode_image'));
         }
 
-        $product->save();
+        // Update Descriptions
+         $productDescs = [];
+        if (isset($validated['product_desc'])) {
+           foreach ($validated['product_desc'] as $productDesc) {
+               $productDescription = ProductDescription::updateOrCreate([
+                   'product_id' => $product->id,
+                   'language_id' => $productDesc['language_id']
+                ],[
+                   'description' => $productDesc['description'],
+                   'public_description' => $productDesc['public_description'],
+                 ]);
+               $productDescs[] = $productDescription;
+            }
+        }
 
-        $data = collect($product);
-        $data['description'] = collect($productDescs);
-        
-        $success = $data;
-        $message = Lang::get("messages.product_updated_successfully");
-        return sendResponse($success, $message);
+       $product->save();
+ 
+       $data = collect($product);
+       $data['description'] = collect($productDescs);
+
+       $success = $data;
+       $message = Lang::get("messages.product_updated_successfully");
+      return sendResponse($success, $message);
     }
+     private function saveImage($base64Data)
+    {
+        $imageData = preg_replace('/data:image\/(.*?);base64,/', '', $base64Data);
+        $extension = $this->getImageExtensionFromBase64($base64Data);
+        $fileName = uniqid() . '.' . $extension;
+        $image = Image::make(base64_decode($imageData));
+        $image->save(public_path('storage/product_images/' . $fileName));
+        return 'product_images/' . $fileName;
+    }
+    
+    // update Product End
 
     public function getSubCategories()
     {
