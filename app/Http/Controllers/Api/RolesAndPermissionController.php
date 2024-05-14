@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Test;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\ProductStyle;
 use App\Models\ProductFormat;
 use App\Models\Inventory;
@@ -193,7 +194,7 @@ class RolesAndPermissionController extends Controller
         return sendResponse($success, $message);
      }
      public function addSupplierUser(Request $request)
-     { 
+     {
          if($this->permission !== "user-edit")
         {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
@@ -203,14 +204,14 @@ class RolesAndPermissionController extends Controller
              'last_name' => 'required',
              'address' => 'required',
              'email' => 'required|email|unique:users',
-             'phone_number' => 'required',
+             'mobile' => 'required',
              'country' => 'required',
-             //'state' => 'required',
+             'state' => 'required',
             //  'country' => 'required',
-             //'city' => 'required',
+             'city' => 'required',
              'role' => 'required',
              'password' => 'required',
-             'confirm_password' => 'required|same:password',
+             'confirm_password' => 'required',
              'is_enable'    => 'required'
 
          ]);
@@ -255,15 +256,15 @@ class RolesAndPermissionController extends Controller
             // $role = Role::update(['name' => $role_name]);
 
             $userData->assignRole($role);
-            
+
         }
-        
+
 
         // $data = User::create($requestData);
         $success['data']  = $data;
         $message          = Lang::get("messages.role_created");
         return sendResponse($success, $message);
-         
+
      }
       // Delete Role
     public function deleteRole(Request $request)
@@ -625,7 +626,21 @@ class RolesAndPermissionController extends Controller
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
         }
-
+        public function GetRetailers(request $request)
+        {
+        if($this->permission !== "reports-view")
+        {
+          return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+            $user_id = Auth::user()->id;
+            $orders = User::select("first_name")
+            ->where('users.added_by', '=', $user_id)
+            ->where('users.user_type_id', '=', 4)
+            ->get();
+           $success  = $orders;
+           $message  = Lang::get("messages.topRetailerList");
+           return sendResponse($success, $message);
+       }
     public function GetSuppliersProductsName(request $request)
     {
       if($this->permission !== "reports-view")
@@ -691,22 +706,6 @@ class RolesAndPermissionController extends Controller
         return sendResponse($success, $message);
         }
 
-    public function GetRetailers(request $request)
-    {
-    if($this->permission !== "reports-view")
-    {
-      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
-    }
-        $user_id = Auth::user()->id;
-        $orders = User::select("first_name")
-        ->where('users.added_by', '=', $user_id)
-        ->where('users.user_type_id', '=', 4)
-        ->get();
-       $success  = $orders;
-       $message  = Lang::get("messages.topRetailerList");
-       return sendResponse($success, $message);
-   }
-
    public function GetRetailersCity(request $request)
    {
    if($this->permission !== "reports-view")
@@ -742,6 +741,207 @@ class RolesAndPermissionController extends Controller
        return sendResponse($success, $message);
     }
 
+
+  // Reports cascading
+  // Distributors form
+    public function GetFullDist_model(request $request){
+  //   if($this->permission !== "reports-view")
+  //    {
+  //      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+  //    }
+    $suppliers = DB::select(DB::raw("select user_profiles.user_id,user_profiles.company_name,users.user_type_id
+    from users join user_profiles where users.id = user_profiles.user_id and users.user_type_id = 3"));
+    $retailers = DB::select(DB::raw("select users.user_type_id, user_profiles.company_name, user_profiles.business_name, users.added_by as user_id, user_profiles.business_category_id from users join user_profiles
+                                    where users.id = user_profiles.user_id and users.user_type_id = 4 and users.id >= 2 and users.added_by >= 2"));
+    $cad_csp =  DB::select(DB::raw("select user_profiles.user_id,business_categories.name from business_categories
+    join user_profiles on business_categories.id = business_category_id"));
+    $product_name =  DB::select(DB::raw("select user_id,product_name from products"));
+    $product_type =  DB::select(DB::raw("select user_id,product_type from products group By product_type"));
+    $Product_style = DB::select(DB::raw("select products.user_id as user_id,product_styles.id, product_styles.name from product_styles join products on product_styles.id = products.style group By product_styles.id"));
+    $Product_format = DB::select(DB::raw("select products.user_id as user_id,product_formats.id,product_formats.name from product_formats join products on product_formats.id = products.product_format group By product_formats.id"));
+
+    $orders =  Array($suppliers,$retailers,$cad_csp,$product_name,$product_type,$Product_style,$Product_format);
+                        $success  = $orders;
+                        //$success  = $Product_format;
+                        $message  = Lang::get("Successfully Listed");
+                        return sendResponse($success, $message);
+    }
+
+    public function PostDist_ModelRequest(request $request){
+
+      $supplier_value = $request->input('supplier_value');
+      //$supplier_value = 101;
+
+      $suppliers = DB::select(DB::raw("select user_profiles.user_id as supplier_id,
+      user_profiles.company_name as supplier_company_name,user_profiles.business_name as supplier_business_name,
+      users.user_type_id as supplier_role_id from users join user_profiles
+      where users.id = user_profiles.user_id and users.user_type_id = 3 and user_profiles.user_id = '.$supplier_value.'"));
+
+      $retailers = User::select('user_profiles.user_id as retailer_id',
+      'user_profiles.company_name as retailer_company_name','user_profiles.business_name as retailer_business_name',
+      'users.user_type_id as retailer_role_id','users.added_by')
+         ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+         ->where('users.user_type_id', '=', 4)
+         ->where('users.added_by', '=', $supplier_value)
+         ->groupBy('retailer_id')
+         ->get();
+      $orders =  Array($suppliers,$retailers);
+                                    $success  = $orders;
+                                    $message  = Lang::get("Successfully Listed");
+                                    return sendResponse($success, $message);
+    }
+
+    // Reports formsends
+            public function GetFullInventory_model(request $request){
+            ///  if($this->permission !== "reports-view")
+            //    {
+            //      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+            //    }
+            //$users= DB::select(DB::raw("select user_profiles.user_id,user_profiles.company_name,users.user_type_id from users join user_profiles
+            //                              where users.id = user_profiles.user_id"));
+            $inventories = DB::select(DB::raw("select inventories.warehouse_id,warehouses.name as w_name FROM `inventories`
+    join products on products.id = inventories.product_id join warehouses on warehouses.id = inventories.warehouse_id group By warehouses.id"));
+
+            $product_name =  DB::select(DB::raw("select products.product_name,inventories.product_id,
+            inventories.warehouse_id,warehouses.name as warehouse_name FROM `inventories`
+    join products on products.id = inventories.product_id join warehouses on warehouses.id = inventories.warehouse_id group By product_id"));
+
+            $product_type =  DB::select(DB::raw("select products.product_type, inventories.warehouse_id,
+            warehouses.name as warehouse_name from `inventories`
+    join products on products.id = inventories.product_id join warehouses on warehouses.id = inventories.warehouse_id group By products.product_type"));
+
+            $Product_style = DB::select(DB::raw("select product_styles.id, product_styles.name,inventories.warehouse_id from product_styles
+    join products on products.style = product_styles.id join inventories on products.id = inventories.product_id
+    join warehouses on warehouses.id = inventories.warehouse_id group By product_styles.id"));
+            $Product_format = DB::select(DB::raw("select product_formats.id,product_formats.name,inventories.warehouse_id from product_formats
+            join products on products.product_format = product_formats.id join inventories on products.id = inventories.product_id
+            join warehouses on warehouses.id = inventories.warehouse_id group By product_formats.id"));
+            $orders =  Array($inventories,$product_name,$product_type,$Product_style,$Product_format);
+                                $success  = $orders;
+                                //$success  = $Product_format;
+                                $message  = Lang::get("Successfully Listed");
+                                return sendResponse($success, $message);
+            }
+
+            public function PostProducts_Request(request $request){
+
+            $supplier_value = $request->input('supplier_value');
+            $retailer_value = $request->input('retailer_value');
+            //$supplier_value = 101;
+            //$retailer_value = 127;
+
+            $product_orders = Product::select('products.id as product_id','products.product_name','products.product_type','products.style as product_style',
+                 'products.product_format')
+                 ->join('order_items', 'products.id', '=', 'order_items.product_id')
+                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                 ->join('product_format_deposit', 'products.user_id', '=', 'product_format_deposit.user_id')
+                 ->join('product_formats','products.product_format', '=', 'product_formats.id')
+                 ->join('product_styles','product_styles.id','=','products.style')
+                 ->where('orders.supplier_id', '=', $supplier_value)
+                 ->where('orders.retailer_id', '=', $retailer_value)
+                 ->groupBy('order_items.product_id')
+                 ->get();
+            //$orders =  Array($suppliers,$retailers);
+                                          $success  = $product_orders;
+                                          $message  = Lang::get("Successfully Listed");
+                                          return sendResponse($success, $message);
+                                        }
+            public function PostInventory_model(request $request){
+              $warehouse_id = $request->input('warehouse_id');
+              //$warehouse_id = 7;
+
+              $orders = Inventory::select('inventories.added_by as users','inventories.warehouse_id','products.product_name','inventories.product_id',
+              'products.style as product_style','products.product_format')
+                   ->join('products', 'products.id', '=', 'inventories.product_id')
+                   ->where('inventories.warehouse_id', '=', $warehouse_id)
+                   ->get();
+                   $success  = $orders;
+                   $message  = Lang::get("Successfully Listed");
+                   return sendResponse($success, $message);
+            }
+//Post sales Models
+      public function PostFullSales_model(request $request){
+
+        $supplier_value = $request->input('supplier_value');
+        $retailer_value = $request->input('retailer_value');
+        $by_user = $request->input('by_user');
+
+        //$supplier_value = 101;
+        //$retailer_value = 127;
+        //$by_user = 101;
+
+        $orders = Product::select('products.id as product_id','products.product_name','products.product_type','products.style as product_style',
+             'products.product_format')
+             ->join('order_items', 'products.id', '=', 'order_items.product_id')
+             ->join('orders', 'order_items.order_id', '=', 'orders.id')
+             ->join('product_format_deposit', 'products.user_id', '=', 'product_format_deposit.user_id')
+             ->join('product_formats','products.product_format', '=', 'product_formats.id')
+             ->join('product_styles','product_styles.id','=','products.style')
+             ->where('orders.supplier_id', '=', $supplier_value)
+             ->where('orders.retailer_id', '=', $retailer_value)
+             ->where('orders.added_by', '=', $by_user)
+             ->get();
+
+             $success  = $orders;
+             $message  = Lang::get("Successfully Listed");
+             return sendResponse($success, $message);
+
+      }
+      public function PostFullCustomMade_model(request $request){
+
+        $distributor_id = $request->input('distributor_id');
+        //$distributor_id = 102;
+
+        $orders = Inventory::select('products.product_name','inventories.product_id',
+        'products.style as product_style','products.product_format','products.product_type')
+             ->join('products', 'products.id', '=', 'inventories.product_id')
+             ->where('inventories.distributor_id', '=', $distributor_id)
+             ->get();
+             $success  = $orders;
+             $message  = Lang::get("Successfully Listed");
+             return sendResponse($success, $message);
+
+      }
+        public function GetFullCustom_model(request $request){
+
+        $distributors = DB::select(DB::raw("select user_profiles.user_id,user_profiles.company_name,users.user_type_id from users join user_profiles
+                                        where users.id = user_profiles.user_id and users.user_type_id = 2"));
+
+        $orders =  Array($distributors);
+                  $success  = $orders;
+                                                            //$success  = $Product_format;
+                  $message  = Lang::get("Successfully Listed");
+                  return sendResponse($success, $message);
+
+        }
+//List of Inventories forms
+    public function GetFullSales_model(request $request){
+  //   if($this->permission !== "reports-view")
+  //    {
+  //      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+  //    }
+    $suppliers = DB::select(DB::raw("select user_profiles.user_id,user_profiles.company_name,users.user_type_id from users join user_profiles
+                                  where users.id = user_profiles.user_id and users.user_type_id = 3"));
+    $retailers = DB::select(DB::raw("select user_profiles.user_id, user_profiles.company_name, user_profiles.business_name, users.added_by, users.user_type_id, user_profiles.business_category_id from users join user_profiles
+                                    where users.id = user_profiles.user_id and users.user_type_id = 4 and users.id >= 2 and users.added_by >= 2"));
+    $fulldata =  DB::select(DB::raw("select inventories.distributor_id, inventories.supplier_id, inventories.added_by as users, products.product_name,products.product_type, inventories.product_id,products.style as product_style, products.product_format FROM `inventories`
+join products on products.id = inventories.product_id join warehouses on warehouses.id = inventories.warehouse_id"));
+    $product_name =  DB::select(DB::raw("select id,product_name,product_type,style as product_style, product_format,user_id from products"));
+    $product_type =  DB::select(DB::raw("select product_type from products group By product_type"));
+    $Product_style = DB::select(DB::raw("select product_styles.id, product_styles.name from product_styles"));
+    $Product_format = DB::select(DB::raw("select product_formats.id,product_formats.name from product_formats"));
+    $Product_orders = DB::select(DB::raw("select orders.supplier_id, orders.retailer_id, products.product_name,
+     order_items.product_style_id, order_items.product_format_id from orders join order_items on orders.id = order_items.order_id
+    join products on order_items.product_id = products.id"));
+    $orders =  Array($suppliers,$retailers,$fulldata,$product_name,$product_type,$Product_style,$Product_format,$Product_orders);
+                        $success  = $orders;
+                        //$success  = $Product_format;
+                        $message  = Lang::get("Successfully Listed");
+                        return sendResponse($success, $message);
+    }
+
+// Ends Reports formsends
+
     public function GetRetailersList(request $request)
     {
     if($this->permission !== "reports-view")
@@ -750,7 +950,7 @@ class RolesAndPermissionController extends Controller
     }
     //    $user_id = Auth::user()->id;
         //$user_id =4;
-        $orders = User::select("user_profiles.user_id", "user_profiles.business_name")
+        $orders = User::select("user_profiles.user_id", "user_profiles.business_name", "users.added_by")
         ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
         //->where('users.added_by', '=', $user_id)
         ->where('users.user_type_id','=', 4)
@@ -759,25 +959,6 @@ class RolesAndPermissionController extends Controller
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
     }
-
-    public function GetDistributorsList(request $request)
-    {
-    if($this->permission !== "reports-view")
-    {
-      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
-    }
-        $user_id = Auth::user()->id;
-      //$user_id =4;
-        $orders = User::select("user_profiles.user_id", "user_profiles.company_name")
-        ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
-        //->where('users.added_by', '=', $user_id)
-        ->where('user_type_id','=', 2)
-        ->get();
-        $success  = $orders;
-        $message  = Lang::get("messages.topRetailerList");
-        return sendResponse($success, $message);
-        }
-
     public function GetSuppliersList(request $request)
     {
     if($this->permission !== "reports-view")
@@ -785,7 +966,7 @@ class RolesAndPermissionController extends Controller
       return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
     }
       //  $user_id = Auth::user()->id;
-        $orders = User::select("user_profiles.user_id", "user_profiles.company_name")
+        $orders = User::select("user_profiles.user_id", "user_profiles.company_name", "user_profiles.business_name")
         ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
         ->where('users.user_type_id','=', 3)
         ->get();
@@ -808,6 +989,24 @@ class RolesAndPermissionController extends Controller
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
         }
+
+    public function GetDistributorsList(request $request)
+        {
+        if($this->permission !== "reports-view")
+        {
+          return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+            $user_id = Auth::user()->id;
+          //$user_id =4;
+            $orders = User::select("user_profiles.user_id", "user_profiles.company_name","user_profiles.business_name")
+            ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+            //->where('users.added_by', '=', $user_id)
+            ->where('user_type_id','=', 2)
+            ->get();
+            $success  = $orders;
+            $message  = Lang::get("messages.topRetailerList");
+            return sendResponse($success, $message);
+      }
 
     public function GetCadCsp(request $request)
     {
@@ -2093,9 +2292,227 @@ public function getSuperSalesReports()
 $orders =User::select('user_type_id', DB::raw('COUNT(*) as count'))
     ->groupBy('user_type_id')
     ->get();
-
+//SELECT COUNT('user_type_id') as count from users GROUP BY user_type_id
           $success  = $orders;
           $message  = Lang::get("messages.topRetailerList");
           return sendResponse($success, $message);
           }
+
+public function Distributor_formData(request $request){
+  if($this->permission !== "reports-view")
+  {
+    return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+  }
+            $orders = DB::table('users')
+          //  ->select('*')
+              ->select('orders.id as order_id',
+              DB::raw('ifnull(orders.total_quantity,0) as orders_total_quantity'),
+              'orders.supplier_id',
+              'orders.retailer_id',
+                DB::raw('(SELECT business_name FROM user_profiles
+                           WHERE user_id = orders.supplier_id)as supplier_name groupBy supplier_id'),
+                DB::raw('(SELECT business_name FROM user_profiles
+                                      WHERE user_id = orders.retailer_id) as retailer_name'),
+                'products.id as products_id',
+                'products.product_name as products_product_name',
+                'product_styles.name as product_style',
+                'product_styles.id as product_style_id',
+                'products.product_type as products_product_type',
+                'product_formats.name as product_format',
+                'product_formats.id as product_format_id',
+                DB::raw('(CASE
+                 WHEN orders.invoice_status = "0" THEN "Pending"
+                 WHEN orders.invoice_status = "1" THEN "Paid"
+                 WHEN orders.invoice_status = "2" THEN "Overdue"
+                 WHEN orders.invoice_status = "3" THEN "Closed"
+                 WHEN orders.invoice_status = "4" THEN "Collect"
+                 ELSE "Status not Updated"
+                 END) AS invoice_status'),
+                           DB::raw('(CASE
+                               WHEN orders.status = "0" THEN "Pending"
+                               WHEN orders.status = "1" THEN "Approved"
+                               WHEN orders.status = "2" THEN "On Hold"
+                               WHEN orders.status = "3" THEN "Shipped"
+                               WHEN orders.status = "4" THEN "Delivered"
+                               WHEN orders.status = "5" THEN "Cancelled"
+                               ELSE "Status not Updated"
+                               END) AS order_status'),
+                               'user_profiles.business_category_id as cad_csp_id',
+                               DB::raw('(CASE
+                                   WHEN user_profiles.business_category_id = "NULL" THEN "NA"
+                                   WHEN user_profiles.business_category_id = "1" THEN "CAD"
+                                   WHEN user_profiles.business_category_id = "2" THEN "CAD"
+                                   WHEN user_profiles.business_category_id = "3" THEN "CSP"
+                                   WHEN user_profiles.business_category_id = "4" THEN "CSP"
+                                   WHEN user_profiles.business_category_id = "5" THEN "CSP"
+                                   WHEN user_profiles.business_category_id = "6" THEN "CAD"
+                                   WHEN user_profiles.business_category_id = "7" THEN "CAD"
+                                   WHEN user_profiles.business_category_id = "8" THEN "CAD"
+                                   WHEN user_profiles.business_category_id = "9" THEN "CAD"
+                                   WHEN user_profiles.business_category_id = "10" THEN "CSP"
+                                   WHEN user_profiles.business_category_id = "11" THEN "CSP"
+                                   WHEN user_profiles.business_category_id = "12" THEN "CSP"
+                                   WHEN user_profiles.business_category_id = "13" THEN "CSP"
+                                   ELSE "NA"
+                                   END) AS company_type')
+
+                                   )
+                  ->join('user_profiles','users.id','=','user_profiles.user_id')
+                  ->join('products', 'users.added_by', '=', 'products.user_id')
+                  ->join('orders', 'user_profiles.user_id', '=', 'orders.retailer_id')
+                  ->join('product_format_deposit', 'products.user_id', '=', 'product_format_deposit.user_id')
+                  ->join('product_formats','products.product_format', '=', 'product_formats.id')
+                  ->join('product_styles','product_styles.id','=','products.style')
+                            //  ->where('user_type_id', '=', 3)
+                            //  ->where('user_type_id', '=', 2)
+                            //->groupBy('supplier_id')
+                              ->get();
+                              $success  = $orders;
+                              $message  = Lang::get("messages.topRetailerList");
+                              return sendResponse($success, $message);
+          }
+          public function GetFullData_Dashboard(request $request){
+        //    if($this->permission !== "dashboard-view")
+        //    {
+        //      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        //    }
+          $orders1 = DB::select(DB::raw("select count(id) AS Total_Customers from users"));
+          $orders2 = DB::select(DB::raw("select count(id) AS Total_Warehouses from warehouses"));
+          $orders3 = DB::select(DB::raw("select count(id) AS Total_orders from orders"));
+          $orders4 = DB::select(DB::raw("select count(id) AS Pending_orders from orders
+          where status=2"));
+          //->where('status', 2)->get();
+          $orders5 = DB::select(DB::raw("select count(id) AS Shipped_orders from orders
+          where status=4"));
+          //->where('status', 4)->get();
+          $orders6 = DB::select(DB::raw("select count(id) AS invoice_status from orders
+          where invoice_status=3"));
+          //->where('invoice_status', 3)->get();
+          $orders7 = DB::select(DB::raw("select SUM(sub_total) AS Total_revenue from order_items"));
+          //->get();
+          $orders8 = DB::select(DB::raw("select SUM(quantity) AS Total_sold from order_items"));
+        //  ->where('invoice_status', 3)->get();
+          //->groupBy('status')
+          //data:[{"Total_sold":"95"}]
+          $order =  Array($orders1,$orders2,$orders3,
+          $orders4,$orders5,$orders6,$orders7,$orders8
+          );
+                          //    dd($orders5);
+$orders = call_user_func_array('array_merge', $order);
+                              $success  = $orders;
+                              $message  = Lang::get("messages.topRetailerList");
+                              return sendResponse($success, $message);
+          }
+    public function GetSupplier_Dashboard(request $request){
+        //    if($this->permission !== "dashboard-view")
+        //    {
+        //      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        //    }
+          $user_id = Auth::user()->id;
+          $orders1 = DB::select(DB::raw("select count(id) AS Total_Customers from users where added_by = '$user_id'
+          and user_type_id =4"));
+          $orders2 = DB::select(DB::raw("select count(id) AS Total_Warehouses from warehouses where user_id = '$user_id'"));
+          $orders3 = DB::select(DB::raw("select count(id) AS Total_orders from orders where supplier_id = '$user_id'"));
+          $orders4 = DB::select(DB::raw("select count(id) AS Pending_orders from orders
+          where supplier_id = '$user_id' and status=2"));
+          //->where('status', 2)->get();
+          $orders5 = DB::select(DB::raw("select count(id) AS Shipped_orders from orders
+          where supplier_id = '$user_id' and status=4"));
+          //->where('status', 4)->get();
+          $orders6 = DB::select(DB::raw("select count(id) AS invoice_status from orders
+          where supplier_id = '$user_id' and invoice_status=3"));
+          //->where('invoice_status', 3)->get();
+          $orders7 = DB::select(DB::raw("select SUM(order_items.sub_total) AS Total_revenue from order_items
+          join orders on orders.id = order_items.order_id where orders.supplier_id = '$user_id'"));
+          //->get();
+          $orders8 = DB::select(DB::raw("select SUM(order_items.quantity) AS Total_sold from order_items
+          join orders on orders.id = order_items.order_id where orders.supplier_id = '$user_id'"));
+        //  ->where('invoice_status', 3)->get();
+          //->groupBy('status')
+          //data:[{"Total_sold":"95"}]
+          $order =  Array($orders1,$orders2,$orders3,
+          $orders4,$orders5,$orders6,$orders7,$orders8
+          );
+                          //    dd($orders5);
+$orders = call_user_func_array('array_merge', $order);
+                              $success  = $orders;
+                              $message  = Lang::get("messages.topRetailerList");
+                              return sendResponse($success, $message);
+          }
+      public function GetRetailers_Dashboard(request $request){
+            if($this->permission !== "dashboard-view")
+            {
+              return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+            }
+          $user_id = Auth::user()->id;
+          $orders1 = DB::select(DB::raw("select count(added_by) AS Total_Customers from users
+          where user_type_id =3 and id = '$user_id'"));
+          $orders2 = DB::select(DB::raw("select count(id) AS Total_Warehouses from warehouses where user_id = '$user_id'"));
+          $orders3 = DB::select(DB::raw("select count(id) AS Total_orders from orders where retailer_id = '$user_id'"));
+          $orders4 = DB::select(DB::raw("select count(id) AS Pending_orders from orders
+          where retailer_id = '$user_id' and status=2"));
+          //->where('status', 2)->get();
+          $orders5 = DB::select(DB::raw("select count(id) AS Shipped_orders from orders
+          where retailer_id = '$user_id' and status=4"));
+          //->where('status', 4)->get();
+          $orders6 = DB::select(DB::raw("select count(id) AS invoice_status from orders
+          where retailer_id = '$user_id' and invoice_status=3"));
+          //->where('invoice_status', 3)->get();
+          $orders7 = DB::select(DB::raw("select SUM(order_items.sub_total) AS Total_revenue from order_items
+          join orders on orders.id = order_items.order_id where orders.retailer_id = '$user_id'"));
+          //->get();
+          $orders8 = DB::select(DB::raw("select SUM(order_items.quantity) AS Total_sold from order_items
+          join orders on orders.id = order_items.order_id where orders.retailer_id = '$user_id'"));
+        //  ->where('invoice_status', 3)->get();
+          //->groupBy('status')
+          //data:[{"Total_sold":"95"}]
+          $order =  Array($orders1,$orders2,$orders3,
+          $orders4,$orders5,$orders6,$orders7,$orders8
+          );
+                          //    dd($orders5);
+$orders = call_user_func_array('array_merge', $order);
+                              $success  = $orders;
+                              $message  = Lang::get("messages.success");
+                              return sendResponse($success, $message);
+          }
+
+          public function GetDistributor_Dashboard(request $request){
+                if($this->permission !== "dashboard-view")
+                {
+                 return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+               }
+              $user_id = Auth::user()->id;
+              $orders1 = DB::select(DB::raw("select count(id) AS Total_Customers from users
+              where user_type_id =3"));
+              $orders2 = DB::select(DB::raw("select count(id) AS Total_Warehouses from warehouses where user_id = '$user_id'"));
+              $orders3 = DB::select(DB::raw("select count(orders.id) AS Total_orders from orders
+              join order_distributors on orders.id = order_distributors.order_id
+              where distributor_id = '$user_id'"));
+
+              $orders4 = DB::select(DB::raw("select count(orders.id) AS Pending_orders from `order_distributors` join orders on orders.id = order_distributors.order_id
+              join order_items on order_items.order_id = orders.id where distributor_id = '$user_id' and orders.status=0"));
+              //->where('status', 2)->get();
+              $orders5 = DB::select(DB::raw("select count(orders.id) AS Shipped_orders from `order_distributors` join orders on orders.id = order_distributors.order_id
+              join order_items on order_items.order_id = orders.id where distributor_id = '$user_id' and orders.status=4"));
+              //->where('status', 4)->get();
+              $orders6 = DB::select(DB::raw("select count(orders.id) AS invoice_status from `order_distributors` join orders on orders.id = order_distributors.order_id
+              join order_items on order_items.order_id = orders.id where distributor_id = '$user_id' and orders.invoice_status=3"));
+              //->where('invoice_status', 3)->get();
+              $orders7 = DB::select(DB::raw("select SUM(order_items.sub_total) AS Total_revenue from `order_distributors` join orders on orders.id = order_distributors.order_id
+              join order_items on order_items.order_id = orders.id where distributor_id = '$user_id'"));
+              //->get();
+              $orders8 = DB::select(DB::raw("select SUM(order_items.quantity) AS Total_sold from `order_distributors` join orders on orders.id = order_distributors.order_id
+              join order_items on order_items.order_id = orders.id where distributor_id = '$user_id'"));
+            //  ->where('invoice_status', 3)->get();
+              //->groupBy('status')
+              //data:[{"Total_sold":"95"}]
+              $order =  Array($orders1,$orders2,$orders3,
+              $orders4,$orders5,$orders6,$orders7,$orders8
+              );
+                              //    dd($orders5);
+    $orders = call_user_func_array('array_merge', $order);
+                                  $success  = $orders;
+                                  $message  = Lang::get("messages.success");
+                                  return sendResponse($success, $message);
+              }
 }
