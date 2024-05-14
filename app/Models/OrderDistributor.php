@@ -13,6 +13,7 @@ class OrderDistributor extends Model
                             'order_id',
                             'order_item_id',
                             'distributor_id',
+							'other_distributor',
                             'status'
                         ];
 

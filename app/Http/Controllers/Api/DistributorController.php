@@ -9,6 +9,8 @@ use Exception;
 use App\Models\User;
 use App\Models\DwcRoute;
 use App\Models\SupplierDistributor;
+use App\Models\DistributorGroup;
+
 use Lang;
 use Auth;
 
@@ -112,6 +114,44 @@ class DistributorController extends Controller
         $success  = $user_ids;
         $message  = Lang::get("messages.assigned_successfully");
         return sendResponse($success, $message);
+    }
+
+    public function createGroupDistributor(Request $request)
+    { 
+        if ($this->permission !== "supplier-edit") {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+        
+        $user_id = auth()->user()->id;
+        
+        $rules = [
+            'distributor_name' => 'required',
+            'distributor_email' => 'required|email',
+        ];
+        
+        $validator = Validator::make($request->all(), $rules);
+        
+        if ($validator->fails()) {
+            return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+        }
+        
+        $distributor_name = $request->input("distributor_name");
+        $distributor_email = $request->input("distributor_email");
+        
+        try {
+            $groupDistributor = new DistributorGroup();
+            $groupDistributor->distributor_name = $distributor_name;
+            $groupDistributor->distributor_email = $distributor_email;
+            $groupDistributor->supplier_id = $user_id;
+            $groupDistributor->save();
+        
+            $success = $groupDistributor->toArray();
+            $message = Lang::get("messages.assigned_successfully");
+        
+            return sendResponse($success, $message);
+        } catch (\Exception $e) {
+            return sendError('Error', ['error' => $e->getMessage()], 500);
+        }
     }
 
     public function removeRetailerFromRoutes(Request $request)
