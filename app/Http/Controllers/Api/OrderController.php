@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -21,6 +22,9 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Tax;
 use App\Models\ProductFormatDeposit;
+use App\Models\OrderManagementFileDetailName;
+use Illuminate\Support\Facades\Storage;
+
 class OrderController extends Controller
 {
     public $permisssion;
@@ -42,11 +46,13 @@ class OrderController extends Controller
        
         $user = auth()->user();
      
+        // Extracting URL parameters
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
         $retailerId = $request->input('retailer_id');
         $distributorId = $request->input('distributor_id');
-
+        $status = $request->input('status'); 
+      
         $fromDateCarbon = null;
         $toDateCarbon = null;
 
@@ -61,6 +67,7 @@ class OrderController extends Controller
             ->has("items")
             ->where('supplier_id', $user->id);
 
+        // Applying date filters if dates are provided
         if ($fromDateCarbon && $toDateCarbon) {
             $data->whereBetween('created_at', [$fromDateCarbon, $toDateCarbon]);
         } elseif ($fromDateCarbon) {
@@ -78,6 +85,11 @@ class OrderController extends Controller
                 $query->where('distributor_id', $distributorId);
             });
         }
+        if  (isset($status) && in_array($status,[0,1,2,3,4,5,6,7])) {
+            $data->where('status', $status);
+           
+        }
+
 
         $data->orderBy('created_at', 'DESC');
         $success = $data->get();
@@ -95,9 +107,7 @@ class OrderController extends Controller
 
         $validator = Validator::make($request->all(), [
             'retailer_id' => 'required|numeric|exists:users,id',
-            'distributor_id' => 'required|numeric|exists:users,id',
-            // 'deposit' => 'nullable|boolean',
-            // 'taxes' => 'nullable|boolean',
+            'distributor_id' => 'required|numeric', // No initial exists check
             'note' => 'nullable|string',
             'items.*.product_id' => 'required|numeric|exists:products,id',
             'items.*.product_style_id' => 'required|numeric|exists:product_styles,id',
@@ -107,7 +117,16 @@ class OrderController extends Controller
             'items.*.tax' => 'required|numeric',
             'items.*.sub_total' => 'required|numeric'
         ]);
-
+        
+        $validator->sometimes('distributor_id', 'required|numeric|exists:distributor_group,id', function ($input) {
+            return !empty($input->other);
+        });
+        
+        $validator->sometimes('distributor_id', 'required|numeric|exists:users,id', function ($input) {
+            return empty($input->other);
+        });
+        
+        
         if($validator->fails()) {
             return sendError(Lang::get('validation_error'), $validator->errors(), 422);
         }
@@ -160,11 +179,12 @@ class OrderController extends Controller
                                     'created_at' => $createdOn,
                                     ];
             $orderItemInfo = OrderItem::create($orderItemInsertData);
-
+            //other_distributor_id
             $orderDistributorInsertData = [
                                             "order_id" => $order_id,
                                             "order_item_id" => $orderItemInfo->id,
                                             "distributor_id" => $validated['distributor_id'],
+                                            "other_distributor" => $request->input("other"),
                                             'created_at' => $createdOn,
                                             ];
             OrderDistributor::create($orderDistributorInsertData);
@@ -580,7 +600,8 @@ class OrderController extends Controller
         $toDate = $request->input('to_date');
         $supplierId = $request->input('supplier_id');
         $distributorId = $request->input('distributor_id');
-    
+        $status = $request->input('status'); 
+        
         $fromDateCarbon = null;
         $toDateCarbon = null;
     
@@ -612,6 +633,11 @@ class OrderController extends Controller
             $data->whereHas('orderDistributors', function ($query) use ($distributorId) {
                 $query->where('distributor_id', $distributorId);
             });
+
+        }
+        if  (isset($status) && in_array($status,[0,1,2,3,4,5,6,7])) {
+            $data->where('status', $status);
+           
         }
     
         $data->orderBy('created_at', 'DESC');
@@ -748,5 +774,79 @@ class OrderController extends Controller
             return sendResponse($success,Lang::get('messages.added_successfully'));
         }
     }
+
+    public function uploadOrderFile(Request $request)
+    { 
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'file' => 'required',
+        ]);
+    
+        if ($validator->fails()) {
+            return sendError(Lang::get('validation_error'), $validator->errors(), 422);
+        }
+    
+        $user = auth()->user();
+        $file = $request->input('file');
+    
+        if (strpos($file, 'base64') === false) {
+            return sendError('Invalid file format', ['error' => 'File must be base64 encoded'], 400);
+        }
+    
+        $fileData = preg_replace('/data:[^;]+;base64,/', '', $file);
+    
+        $extension =$this->getFileExtensionFromBase64($file);
+    
+        $fileName = uniqid() . '.' . $extension;
+    
+        // Save the file to the storage directory
+        $filePath = 'order_files/' . $fileName;
+        Storage::put($filePath, base64_decode($fileData));
+    
+        // Create a record in the database
+        $data = OrderManagementFileDetailName::create([
+            'order_id' => $request->input('order_id'),
+            'user_id' => $user->id,
+            'file_path' => $filePath,
+        ]);
+    
+        if ($data) {
+            $success['data'] = $data;
+            $message = Lang::get("order file upload");
+            return sendResponse($success, $message);
+        } else {
+            return sendError(Lang::get('messages.already_upload_file'), Lang::get('messages.already_upload_file'), 400);
+        }
+    }
+    
+    public function getUploadFileList(Request $request,$id){
+
+        if($this->permisssion !== "order-view")
+        {
+            return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+        }
+        $user = auth()->user();
+        $data = OrderManagementFileDetailName::where('order_id', $id)->where('user_id', $user->id)->get();
+        $success  = $data;
+        $message  = Lang::get("messages.file_list");
+        return sendResponse($success, $message);
+    } 
+    // Function to determine file extension from base64 data
+    private function getFileExtensionFromBase64($base64String)
+    {
+        // Check if the base64 data contains PDF format
+        if (strpos($base64String, 'application/pdf') !== false) {
+            return 'pdf';
+        }
+        
+        // Check if the base64 data contains Excel format
+        if (strpos($base64String, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') !== false) {
+            return 'xlsx';
+        }
+    
+        return 'xlsx';
+    }
+    
+
 
 }

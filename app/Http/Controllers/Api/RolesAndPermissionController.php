@@ -193,7 +193,7 @@ class RolesAndPermissionController extends Controller
         return sendResponse($success, $message);
      }
      public function addSupplierUser(Request $request)
-     {
+     { 
          if($this->permission !== "user-edit")
         {
             return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
@@ -203,14 +203,14 @@ class RolesAndPermissionController extends Controller
              'last_name' => 'required',
              'address' => 'required',
              'email' => 'required|email|unique:users',
-             'mobile' => 'required',
+             'phone_number' => 'required',
              'country' => 'required',
-             'state' => 'required',
+             //'state' => 'required',
             //  'country' => 'required',
-             'city' => 'required',
+             //'city' => 'required',
              'role' => 'required',
              'password' => 'required',
-             'confirm_password' => 'required',
+             'confirm_password' => 'required|same:password',
              'is_enable'    => 'required'
 
          ]);
@@ -255,15 +255,15 @@ class RolesAndPermissionController extends Controller
             // $role = Role::update(['name' => $role_name]);
 
             $userData->assignRole($role);
-
+            
         }
-
+        
 
         // $data = User::create($requestData);
         $success['data']  = $data;
         $message          = Lang::get("messages.role_created");
         return sendResponse($success, $message);
-
+         
      }
       // Delete Role
     public function deleteRole(Request $request)
