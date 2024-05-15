@@ -61,37 +61,30 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
             Route::get('getSiteLanguages', [LoginController::class, 'getSiteLanguages']);
 
             Route::get('getSubCategories', [ProductController::class, 'getSubCategories']);
-
             Route::get('getProductStyles', [ProductController::class, 'getProductStyles']);
-
             Route::get('getProductFormats', [ProductFormatController::class, 'getProductFormats']);
-
             Route::get('getTaxes', [TaxController::class, 'getTaxes']);
-
             Route::get('getVisibilities', [VisibilityController::class, 'getVisibilities']);
-
             Route::post('contactUs', [ContactUsController::class, 'contactUs']);
             Route::post('newsletter-subscription', [NewsletterSubscriptionController::class, 'store']);
-
             Route::get('generatePickupAndDeliveryTicket', [PDFController::class, 'generatePickupAndDeliveryTicket']);
-
             Route::get("downloadProductBarcode/{id}",[PDFController::class,'downloadProductBarcode']);
 
             //Delete User
-
             Route::get('deleteUser',[UsersController::class,'deleteUser']);
 
+            // Post reports
+            Route::post('PostReportProductList',[RolesAndPermissionController::class,'PostReportProductList']);
+            Route::get('TotalCustomersDashboard',[RolesAndPermissionController::class,'TotalCustomers']);
+            // Post reports
+
+
 Route::middleware(['auth:api'])->group(function(){
-
             Route::post('uploadData',[ProductFormatController::class,'uploaddata']);
-
             Route::get('getQrCodeImage', [LoginController::class, 'getQrCodeImage']);
             Route::get('validateOtp',[LoginController::class, 'validateOtp']);
-
             Route::post('logout', [LoginController::class, 'logout']);
-
             Route::post('changePassword', [LoginController::class, 'changePassword']);
-
             Route::post('getSimilarProducts', [ProductController::class, 'getSimilarProducts']);
 
         // Retailer Section
@@ -124,27 +117,13 @@ Route::prefix('distributor')->group(function() {
         });
 
 Route::prefix('supplier')->group(function() {
-
-
-             //Create Supplier create Group Distributor
-             Route::post('createGroupDistributor',[DistributorController::class, 'createGroupDistributor']);
-            //Create Supplier Upload Order file  
-            Route::post('uploadOrderFile',[OrderController::class,'uploadOrderFile']);
-            Route::get('getUploadFileList/{id}', [OrderController::class, 'getUploadFileList']);
-            Route::get('reportSupplierCity',[RolesAndPermissionController::class,'GetRetailersCity']);
-            Route::get('reportFormdataProductsName',[RolesAndPermissionController::class,'GetSuppliersProductsName']);
-            Route::get('reportFormdataProducttype',[RolesAndPermissionController::class,'GetSuppliersProductsType']);
-            Route::get('reportFormdataProductstyle',[RolesAndPermissionController::class,'GetSuppliersProductStyle']);
-            Route::get('reportFormdataProductformat',[RolesAndPermissionController::class,'GetSuppliersProductFormat']);
-            Route::get('reportFormdataProductgroup',[RolesAndPermissionController::class,'GetSuppliergroup']);
-            Route::get('reportFormdataRetailersList',[RolesAndPermissionController::class,'GetRetailersList']);
-            Route::get('reportFormdataSupplierList',[RolesAndPermissionController::class,'GetSuppliersList']);
-            Route::get('reportFormdataWarehousesList',[RolesAndPermissionController::class,'GetWarehousesList']);
-
-            Route::get('reportFormdataRetailer', [RolesAndPermissionController::class,'GetRetailers']);
             Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
             Route::get('topProductList',[RolesAndPermissionController::class,'topProductList']);
             Route::get('getsalesReport',[RolesAndPermissionController::class,'getsalesReport']);
+            Route::get('getinventoryReport',[RolesAndPermissionController::class,'getInventoryReport']);
+            Route::get('getCustomReports',[RolesAndPermissionController::class,'getCustomReports']);
+            Route::get('getSuperSalesReports',[RolesAndPermissionController::class,'getSuperSalesReports']);
+
             Route::get("getSupplierData",[ProfileController::class,'getSupplierData']);
             Route::post('editSupplierInfo', [ProfileController::class, 'editSupplierInfo']);
             Route::post('saveSupplierProfile', [ProfileController::class, 'saveSupplierProfile']);
@@ -153,17 +132,33 @@ Route::prefix('supplier')->group(function() {
 
             Route::post('depositUpdate',[ProductFormatController::class,'depositUpdate']);
 
-           //Create Supplier changing Retailer Group name 
-            Route::post('createSupplierGroupName', [ProfileController::class, 'createSupplierGroup']);
-            
+
             Route::post('link/distributors', [SupplierController::class, 'linkDistributors']);
             Route::get('getLinkedDistributors', [SupplierController::class, 'getLinkedDistributors']);
             Route::get('getLinkedDistributorsCompany', [SupplierController::class, 'getLinkedDistributorsCompany']);
             Route::get('getLinkedRetailers', [SupplierController::class, 'getLinkedRetailers']);
             //reports
-            Route::post('PostReportProductList',[RolesAndPermissionController::class,'PostReportProductList']);
-            //invoices
+            Route::get('reportSupplierCity',[RolesAndPermissionController::class,'GetRetailersCity']);
+            Route::get('reportSupplierProduct',[RolesAndPermissionController::class,'GetSuppliersProductsName']);
+            Route::get('reportFormdataProducttype',[RolesAndPermissionController::class,'GetSuppliersProductsType']);
+            Route::get('reportFormdataProductstyle',[RolesAndPermissionController::class,'GetSuppliersProductStyle']);
+            Route::get('reportFormdataProductformat',[RolesAndPermissionController::class,'GetSuppliersProductFormat']);
+            Route::get('reportFormdataProductgroup',[RolesAndPermissionController::class,'GetSuppliergroup']);
+            Route::get('reportFormdataSuppliersList',[RolesAndPermissionController::class,'GetSuppliersList']);
+            Route::get('reportFormdataRetailersList',[RolesAndPermissionController::class,'GetRetailersList']);
+            Route::get('reportFormdataDistributorList',[RolesAndPermissionController::class,'GetDistributorsList']);
+            Route::get('reportSuppliername',[RolesAndPermissionController::class,'GetCompanyName']);
+            Route::get('reportFormdataWarehousesList',[RolesAndPermissionController::class,'GetWarehousesList']);
+            Route::get('reportFormdataUsersList',[RolesAndPermissionController::class,'GetUsersList']);
+            Route::get('reportFormdataGetCadCsp',[RolesAndPermissionController::class,'GetCadCsp']);
+            Route::get('reportFormdataRetailer', [RolesAndPermissionController::class,'GetRetailers']);
 
+            //Post report data
+            //Route::post('PostReportProductList',[RolesAndPermissionController::class,'PostReportProductList']);
+            Route::post('PostReportInventoryList',[RolesAndPermissionController::class,'PostReportInventoryList']);
+            Route::post('PostReportCustomList',[RolesAndPermissionController::class,'PostCustomReports']);
+            Route::post('PostSuperSalesReports',[RolesAndPermissionController::class,'PostSuperSalesReports']);
+            //invoices
             Route::get('getInvoiceList',[PDFController::class,'getinvoiceList']);
         });
 
@@ -222,11 +217,7 @@ Route::middleware(['checkMyPermission'])->group(function() {
 
 
             // Retailer Section
-            Route::prefix('retailer')->group(function() {
-
-                  //Create Retailer Upload Order file  
-                Route::post('uploadOrderFile',[OrderController::class,'uploadOrderFile']);
-                Route::get('getUploadFileList/{id}', [OrderController::class, 'getUploadFileList']);
+Route::prefix('retailer')->group(function() {
                 //roles and permission
                 Route::get('getPermission',[RolesAndPermissionController::class,'getPermission']);
                 Route::post('addRetailerRole', [RolesAndPermissionController::class, 'addRole']);
@@ -238,7 +229,7 @@ Route::middleware(['checkMyPermission'])->group(function() {
                 Route::post('deleteUserRole', [RolesAndPermissionController::class, 'deleteRole']);
                 Route::get('getUserList',[RolesAndPermissionController::class,'getUserList']);
 
-                Route::get("getSupplierAllProduct/{id}",[ProductController::class,'getSupplierAllProductList']);
+
                 Route::get("getLocalSuppliers",[RetailerController::class,'getLocalSuppliers']);
                 Route::get("getSupplierListOnDashboard",[RetailerController::class,'getSupplierListOnDashboard']);
                 Route::get("getOrderListOnDashboard",[RetailerController::class,'getOrderListOnDashboard']);
@@ -256,15 +247,14 @@ Route::middleware(['checkMyPermission'])->group(function() {
                 Route::get("clearCart",[CartController::class,'clearCart']);
 
                 Route::get("orderListing",[OrderController::class,'retailerOrderList']);
-                //retailer Orders status Count
-                Route::get('orderListingStatusCount', [OrderController::class, 'retailerOrderListCount']);
+
                 Route::get('orderDetail/{id}', [OrderController::class, 'orderDetail']);
                 Route::post("createOrderByRetailer",[CartController::class,'createOrderByRetailer']);
 
             });
 
             // Supplier - Products/Warehouse/Inventory/Stock/Pricing/Availability/Inventory Transfer/Order
-                Route::prefix('supplier')->group(function() {
+Route::prefix('supplier')->group(function() {
                 //supplier Dashboard
 
                 //Route::get('Dashboard',[RolesAndPermissionController::class,'topRetailerList']);
@@ -319,9 +309,6 @@ Route::middleware(['checkMyPermission'])->group(function() {
                 Route::post('availability/add', [AvailabilityController::class, 'addAvailability']);
                 Route::post('availability/{id}/update', [AvailabilityController::class, 'updateAvailability']);
 
-                  // SendRequestToRetailer
-              Route::post("sendRequestToRetailer",[RetailerController::class,'sendRequestToRetailer']);
-
                 Route::get('retailerRequests', [SupplierController::class, 'getRetailerRequests']);
                 Route::post('retailerRequests/{id}/action', [SupplierController::class, 'actionOnRetailerRequest']);
 
@@ -335,7 +322,6 @@ Route::middleware(['checkMyPermission'])->group(function() {
                 Route::post('inventoryTransfer/add', [InventoryTransferController::class, 'addInventoryTransfer']);
                 Route::post('inventoryTransfer/{id}/update', [InventoryTransferController::class, 'updateInventoryTransfer']);
 
-                Route::get('ordersStatusCount', [OrderController::class, 'supplierOrderListCount']);
                 Route::get('orders', [OrderController::class, 'supplierOrderList']);
                 Route::get('orderDetail/{id}', [OrderController::class, 'orderDetail']);
                 Route::post('order/add', [OrderController::class, 'addSupplierOrder']);
@@ -343,16 +329,10 @@ Route::middleware(['checkMyPermission'])->group(function() {
                 Route::post('order/{id}/update', [OrderController::class, 'updateSupplierOrder']);
                 Route::get('retailerList',[RetailerController::class,'retailerList']);
                 Route::get('retailerList/{id}',[RetailerController::class,'retailerListDetail']);
-                Route::post('order/updatequantity', [OrderController::class, 'updateQuantity']);
 
                 //invoices
                 Route::get("orderInvoice/{id}",[InvoiceDetailController::class,'createOrderInvoice']);
                 Route::get("creatOrderInvoice/{id}",[PDFController::class,'creatOrderInvoice']);
-
-                 //Product Style Post API
-                 Route::post('createProductStyles', [ProductController::class, 'createProductStyles']);
-                 //Product Formats Post API
-                 Route::post('createProductFormats', [ProductFormatController::class, 'createProductFormats']);
 
 
             });
