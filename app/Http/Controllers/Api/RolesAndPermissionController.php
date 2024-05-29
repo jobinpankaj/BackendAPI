@@ -24,6 +24,7 @@ use App\Models\CustomReports;
 use App\Models\SalesReports;
 use App\Models\UserBillingAddress;
 use App\Models\BusinessCategory;
+use App\Models\CountryStateCity;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Lang;
@@ -579,17 +580,6 @@ class RolesAndPermissionController extends Controller
        ->groupBy('products.id', 'order_items.product_id')
        ->orderBy('order_items.sub_total', 'desc')->limit(6)
        ->get();
-    //    **/
-        //dd($orders);
-      //  $users = User::all();
-      //  $mappedData = $orders->map(function ($order) use ($users) {
-      //      $user = $users->where('id', $order->Added_By)->first();
-      //      echo "$user";
-      //      return [
-    //            'order_id' => $order->id,
-    //            'Added By' => $user ? $user->first_name : 'N/A',
-    //        ];
-    //    });
         $success  = $orders;
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
@@ -611,17 +601,6 @@ class RolesAndPermissionController extends Controller
         ->groupBy('products.id', 'order_items.product_id')
         ->orderBy('total_quantity_sold', 'desc')->limit(6)
         ->get();
-     //    **/
-
-       //  $users = User::all();
-       //  $mappedData = $orders->map(function ($order) use ($users) {
-       //      $user = $users->where('id', $order->Added_By)->first();
-       //      echo "$user";
-       //      return [
-     //            'order_id' => $order->id,
-     //            'Added By' => $user ? $user->first_name : 'N/A',
-     //        ];
-     //    });
         $success  = $orders;
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
@@ -657,7 +636,35 @@ class RolesAndPermissionController extends Controller
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
     }
-
+    public function GetRetailers(request $request)
+    {
+    if($this->permission !== "reports-view")
+    {
+      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+    }
+        $user_id = Auth::user()->id;
+        $orders = User::select("first_name")
+        ->where('users.added_by', '=', $user_id)
+        ->where('users.user_type_id', '=', 4)
+        ->get();
+       $success  = $orders;
+       $message  = Lang::get("messages.topRetailerList");
+       return sendResponse($success, $message);
+   }
+    public function GetCompany_Name(request $request)
+    {
+      if($this->permission !== "reports-view")
+    {
+      return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+    }
+        $user_id = Auth::user()->id;
+        $orders = UserProfile::select("company_name")
+        ->where('user_id', '=', $user_id)
+        ->get();
+        $success  = $orders;
+        $message  = Lang::get("Success");
+        return sendResponse($success, $message);
+    }
     public function GetSuppliersProductsType(request $request)
     {
       if($this->permission !== "reports-view")
@@ -723,7 +730,21 @@ class RolesAndPermissionController extends Controller
         $message  = Lang::get("messages.topRetailerList");
         return sendResponse($success, $message);
     }
+    public function GetInventoryUserList(request $request)
+    {
+    if($this->permission !== "reports-view")
+    {
+        return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+    }
 
+        $orders = User::select("*")
+        ->where('users.status', '=', 1)
+        ->where('first_name', '<>', '')
+         ->get();
+         $success  = $orders;
+         $message  = Lang::get("messages.topRetailerList");
+         return sendResponse($success, $message);
+     }
    public function GetSuppliergroup(request $request)
    {
    if($this->permission !== "reports-view")
@@ -2206,6 +2227,20 @@ join products on products.id = inventories.product_id join warehouses on warehou
 
    }
 /* report sections */
+public function getDistributionReport()
+{
+ if($this->permission !== "reports-view")
+{
+  return sendError('Access Denied', ['error' => Lang::get("messages.not_permitted")], 403);
+ }
+ $user_id = Auth::user()->id;
+ $reports = SupplierReports::all("created_at","filename","file_path","file_type","user_id")
+ ->where('user_id','=',$user_id);
+
+ $success  = $reports;
+ $message  = Lang::get("messages.retailer_user_list");
+ return sendResponse($success, $message);
+ }
    public function getsalesReport()
    {
     if($this->permission !== "reports-view")
