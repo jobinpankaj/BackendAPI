@@ -102,15 +102,19 @@ Route::prefix('v1')->middleware('setAppLanguage')->group(function () {
 Route::middleware(['auth:api'])->group(function(){
 
             Route::post('uploadData',[ProductFormatController::class,'uploaddata']);
-
             Route::get('getQrCodeImage', [LoginController::class, 'getQrCodeImage']);
             Route::get('validateOtp',[LoginController::class, 'validateOtp']);
-
             Route::post('logout', [LoginController::class, 'logout']);
-
             Route::post('changePassword', [LoginController::class, 'changePassword']);
-
             Route::post('getSimilarProducts', [ProductController::class, 'getSimilarProducts']);
+
+            Route::get('reportCompanyName',[RolesAndPermissionController::class,'GetCompany_Name']);
+            Route::get('reportCadCsp',[RolesAndPermissionController::class,'GetCadCsp']);
+            Route::get('GetInventoryUserList',[RolesAndPermissionController::class,'GetInventoryUserList']);
+            Route::get('GetDistributorsList',[RolesAndPermissionController::class,'GetDistributorsList']);
+                        // report
+            Route::get('getDistributionTableReport',[RolesAndPermissionController::class,'getDistributionReport']);
+            Route::get('reportFormdataProductgroup',[RolesAndPermissionController::class,'GetSuppliergroup']);
 
         // Retailer Section
 Route::prefix('retailer')->group(function() {
@@ -146,7 +150,7 @@ Route::prefix('distributor')->group(function() {
 
 Route::prefix('supplier')->group(function() {
 
-            //Create Supplier Upload Order file  
+            //Create Supplier Upload Order file
             Route::post('uploadOrderFile',[OrderController::class,'uploadOrderFile']);
             Route::get('getUploadFileList/{id}', [OrderController::class, 'getUploadFileList']);
             Route::get('reportSupplierCity',[RolesAndPermissionController::class,'GetRetailersCity']);
@@ -158,7 +162,6 @@ Route::prefix('supplier')->group(function() {
             Route::get('reportFormdataRetailersList',[RolesAndPermissionController::class,'GetRetailersList']);
             Route::get('reportFormdataSupplierList',[RolesAndPermissionController::class,'GetSuppliersList']);
             Route::get('reportFormdataWarehousesList',[RolesAndPermissionController::class,'GetWarehousesList']);
-
             Route::get('reportFormdataRetailer', [RolesAndPermissionController::class,'GetRetailers']);
             Route::get('topRetailerList',[RolesAndPermissionController::class,'topRetailerList']);
             Route::get('topProductList',[RolesAndPermissionController::class,'topProductList']);
@@ -171,9 +174,9 @@ Route::prefix('supplier')->group(function() {
 
             Route::post('depositUpdate',[ProductFormatController::class,'depositUpdate']);
 
-           //Create Supplier changing Retailer Group name 
+           //Create Supplier changing Retailer Group name
             Route::post('createSupplierGroupName', [ProfileController::class, 'createSupplierGroup']);
-            
+
             Route::post('link/distributors', [SupplierController::class, 'linkDistributors']);
             Route::get('getLinkedDistributors', [SupplierController::class, 'getLinkedDistributors']);
             Route::get('getLinkedDistributorsCompany', [SupplierController::class, 'getLinkedDistributorsCompany']);
@@ -242,7 +245,7 @@ Route::middleware(['checkMyPermission'])->group(function() {
             // Retailer Section
             Route::prefix('retailer')->group(function() {
 
-                  //Create Retailer Upload Order file  
+                  //Create Retailer Upload Order file
                 Route::post('uploadOrderFile',[OrderController::class,'uploadOrderFile']);
                 Route::get('getUploadFileList/{id}', [OrderController::class, 'getUploadFileList']);
                 //roles and permission
